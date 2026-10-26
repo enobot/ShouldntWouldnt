@@ -1,0 +1,23 @@
+body {
+  margin: 2rem auto;
+  max-width: 36rem;
+  color: #241418;
+  font: 16px/1.45 Georgia, "Times New Roman", serif;
+}
+
+label,
+button {
+  display: block;
+  margin: 0.75rem 0;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+.note {
+  color: #6b4a52;
+}

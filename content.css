@@ -1,0 +1,21 @@
+[data-shouldnt-wouldnt="marked"] {
+  box-shadow: inset 0 0 0 1px #9f1239, 0 0 0 1px #9f1239 !important;
+}
+
+.shouldnt-wouldnt-host {
+  display: block;
+  margin: 4px 0 8px;
+  max-width: 36rem;
+  visibility: visible;
+  opacity: 1;
+  position: static;
+  clear: both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-shouldnt-wouldnt="marked"],
+  .shouldnt-wouldnt-host {
+    animation: none !important;
+    transition: none !important;
+  }
+}

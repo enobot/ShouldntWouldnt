@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Field added later</title>
+    <link rel="stylesheet" href="common.css" />
+  </head>
+  <body>
+    <h1>Add a field</h1>
+    <p class="note">The button inserts a Social Security field after the page has loaded.</p>
+    <button type="button" id="add">Add Social Security field</button>
+    <form id="form" action="#dynamic" method="get"></form>
+    <script>
+      document.getElementById("add").addEventListener("click", function () {
+        var label = document.createElement("label");
+        label.appendChild(document.createTextNode("Social Security number "));
+        var input = document.createElement("input");
+        input.id = "ssn";
+        input.name = "ssn";
+        label.appendChild(input);
+        document.getElementById("form").appendChild(label);
+      });
+    </script>
+  </body>
+</html>

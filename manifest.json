@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Shouldn't Wouldn't",
+  "version": "0.1.1",
+  "description": "Think Twice Before You Share. Free local reminders before you enter sensitive information.",
+  "minimum_chrome_version": "120",
+  "action": {
+    "default_title": "Shouldn't Wouldn't",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "dist/src/background/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["dist/content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle",
+      "all_frames": true,
+      "match_about_blank": true,
+      "match_origin_as_fallback": true
+    }
+  ],
+  "permissions": ["storage"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'self'; base-uri 'self'"
+  }
+}

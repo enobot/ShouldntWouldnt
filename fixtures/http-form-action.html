@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>HTTP form action</title>
+    <link rel="stylesheet" href="common.css" />
+  </head>
+  <body>
+    <h1>HTTP form action</h1>
+    <p class="note">This form's action is an http address. A warned field plus that action is the insecure-form signal.</p>
+    <form action="http://127.0.0.1/posted" method="get">
+      <label>Password <input type="password" name="password" autocomplete="current-password" /></label>
+      <button type="submit">Continue</button>
+    </form>
+  </body>
+</html>

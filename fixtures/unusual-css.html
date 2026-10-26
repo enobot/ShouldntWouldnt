@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Unusual CSS</title>
+    <link rel="stylesheet" href="common.css" />
+    <style>
+      .shouldnt-wouldnt-host {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        transform: scale(0) !important;
+      }
+      [data-shouldnt-wouldnt="marked"] {
+        box-shadow: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Styles that try to hide the note</h1>
+    <p class="note">
+      This page's stylesheet tries to hide the reminder and the red mark. The note should still be readable.
+      An element placed on top of the note can still cover it. This page does not do that.
+    </p>
+    <form action="#styled" method="get">
+      <label>Social Security number <input name="ssn" autocomplete="off" /></label>
+      <button type="submit">Continue</button>
+    </form>
+  </body>
+</html>

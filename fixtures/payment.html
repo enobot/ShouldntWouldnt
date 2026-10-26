@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Payment form</title>
+    <link rel="stylesheet" href="common.css" />
+  </head>
+  <body>
+    <h1>Checkout</h1>
+    <p class="note">Fake payment. Card number and security code should get reminders. Name, expiration, and the note should stay quiet.</p>
+    <form action="#pay" method="get">
+      <label>Name on card <input name="ccname" autocomplete="cc-name" /></label>
+      <label>Card number <input name="cardnumber" autocomplete="cc-number" inputmode="numeric" /></label>
+      <label>Expiration <input name="ccexp" autocomplete="cc-exp" placeholder="MM / YY" /></label>
+      <label>Security code <input name="cvv" autocomplete="cc-csc" inputmode="numeric" /></label>
+      <label>Order note <textarea name="note"></textarea></label>
+      <button type="submit">Pay</button>
+    </form>
+  </body>
+</html>

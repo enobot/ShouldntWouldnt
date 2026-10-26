@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Single-page update</title>
+    <link rel="stylesheet" href="common.css" />
+  </head>
+  <body>
+    <h1>Page that updates itself</h1>
+    <p class="note">
+      Draw the form first. "Remove the note" deletes only the reminder, which is the case the repair limit covers.
+      "Replace the form" throws the fields away and inserts new ones, which is a normal dynamic form.
+    </p>
+    <button type="button" id="draw">Draw the form</button>
+    <button type="button" id="remove-note">Remove the note</button>
+    <button type="button" id="replace">Replace the form</button>
+    <div id="app"></div>
+    <script>
+      var app = document.getElementById("app");
+      function paint() {
+        app.innerHTML =
+          '<form action="#spa" method="get"><label>Username <input name="username" autocomplete="username" /></label>' +
+          '<label>Password <input type="password" name="password" autocomplete="current-password" /></label>' +
+          '<button type="submit">Sign in</button></form>';
+      }
+      document.getElementById("draw").addEventListener("click", paint);
+      document.getElementById("replace").addEventListener("click", paint);
+      document.getElementById("remove-note").addEventListener("click", function () {
+        document.querySelectorAll(".shouldnt-wouldnt-host").forEach(function (node) {
+          node.remove();
+        });
+      });
+    </script>
+  </body>
+</html>

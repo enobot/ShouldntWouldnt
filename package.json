@@ -1,0 +1,18 @@
+{
+  "name": "shouldnt-wouldnt",
+  "version": "0.1.1",
+  "private": true,
+  "type": "module",
+  "description": "Think Twice Before You Share.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/bundle-content.mjs && node scripts/make-icons.mjs",
+    "test": "tsc -p tsconfig.json && node --test dist/tests/*.test.js",
+    "pretest": "node scripts/make-icons.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
