@@ -10,13 +10,13 @@ import {
   whyText,
 } from "../shared/copy.js";
 import { responseToWarning, shouldOfferStrongWarning, shouldPauseSubmit } from "../shared/decisions.js";
-import { classifyField } from "../shared/detect.js";
+import { classifyField, needsSiteConcern } from "../shared/detect.js";
 import { FieldBook } from "../shared/ledger.js";
 import { shouldMask } from "../shared/masking.js";
 import { parseIncoming } from "../shared/messages.js";
 import { PROTECTION_STORAGE_KEY, protectionFromStored } from "../shared/protection.js";
 import { consumeRepair, freshRepairBudget, type RepairBudget } from "../shared/reminder-guard.js";
-import { collectConcerns } from "../shared/signals.js";
+import { collectConcerns, resolvesToHttp } from "../shared/signals.js";
 import { statusFor } from "../shared/status.js";
 import type { PageSummary } from "../shared/messages.js";
 import type { ConcernKind, WarnCategory } from "../shared/types.js";
@@ -28,7 +28,7 @@ const MASK = "data-shouldnt-wouldnt-mask";
 const MARK_SHADOW = "inset 0 0 0 1px #9f1239, 0 0 0 1px #9f1239";
 const TEXT_SECURITY = "-webkit-text-security";
 const REVEAL_LABELS = { show: SHOW_LABEL, hide: HIDE_LABEL, showName: SHOW_NAME, hideName: HIDE_NAME };
-const FLOW_DISPLAYS = new Set(["block", "flow-root", "list-item"]);
+const FLOW_DISPLAYS = new Set(["block", "flow-root", "list-item", "table-cell"]);
 const OBSERVE: MutationObserverInit = {
   childList: true,
   subtree: true,
@@ -248,24 +248,79 @@ function noteSelfMove(host: HTMLElement): void {
   if (host.isConnected) selfMoved.add(host);
 }
 
+/** Puts a note after its anchor, after any of our notes already there, so notes that share an anchor keep their order. */
 function placeAfter(anchor: Element, host: HTMLElement): void {
   const parent = anchor.parentNode;
   if (!parent) return;
+  let before = anchor.nextSibling;
+  while (before && before !== host && ours.has(before)) before = before.nextSibling;
   noteSelfMove(host);
-  parent.insertBefore(host, anchor.nextSibling);
+  parent.insertBefore(host, before);
+}
+
+/** True when a note sits after its anchor with nothing but our other notes in between. */
+function sitsAfter(anchor: Element, host: Element): boolean {
+  let node = anchor.nextElementSibling;
+  while (node && node !== host && ours.has(node)) node = node.nextElementSibling;
+  return node === host;
+}
+
+/** True when a block placed among this element's children lands on its own line below them. */
+function stacksChildren(el: Element): boolean {
+  const style = getComputedStyle(el);
+  if (FLOW_DISPLAYS.has(style.display)) return true;
+  if (style.display === "flex" || style.display === "inline-flex") return style.flexDirection.startsWith("column");
+  if (style.display === "grid" || style.display === "inline-grid") return style.gridTemplateColumns.trim().split(/\s+/).length <= 1;
+  return false;
+}
+
+/** Stops climbing at the form or the page itself, so a note never ends up far from its field. */
+function climbLimit(el: Element | null): boolean {
+  return !el || el instanceof HTMLFormElement || el === document.body || el === document.documentElement;
 }
 
 /**
- * Where a note goes. After the field's own label when that label sits in ordinary block flow, so
- * the note is not read as part of the field's name. Inside the label, right after the field, when
- * the label is one item of a flex or grid row, so the row keeps its shape.
+ * Where a note goes: on its own line below the field. It never goes inside the field's label, where a
+ * screen reader would read it as part of the field's name, and never into a box that lays its children
+ * side by side (a flex row, a multi-column grid, an inline wrapper), where it would squeeze the field.
+ * From the field, it moves out of those boxes until it reaches one that stacks its children.
  */
 function anchorFor(field: HTMLElement): Element {
-  const label = field.closest("label");
-  if (!label || label.querySelectorAll("input, textarea, select").length !== 1) return field;
-  const parent = label.parentElement;
-  if (!parent) return field;
-  return FLOW_DISPLAYS.has(getComputedStyle(parent).display) ? label : field;
+  let anchor: Element = field;
+  for (let depth = 0; depth < 8; depth += 1) {
+    const parent = anchor.parentElement;
+    if (climbLimit(parent) || !parent) break;
+    if (!(parent instanceof HTMLLabelElement) && stacksChildren(parent)) break;
+    anchor = parent;
+  }
+  return anchor;
+}
+
+/**
+ * Some pages draw a field inside a box of fixed height. A note placed there spills over whatever comes
+ * next, such as the submit button. After a batch is placed, a note that spills out of its box moves
+ * after that box, at most three levels. Boxes that scroll their content are left alone.
+ */
+function settlePlacement(placed: FieldView[]): void {
+  let pending = placed;
+  for (let round = 0; round < 3 && pending.length > 0; round += 1) {
+    const spilled = pending.filter((view) => {
+      const parent = view.host.parentElement;
+      if (!view.host.isConnected || climbLimit(parent) || !parent) return false;
+      const style = getComputedStyle(parent);
+      if (style.display === "contents" || /auto|scroll/.test(style.overflowY)) return false;
+      const box = parent.getBoundingClientRect();
+      const note = view.host.getBoundingClientRect();
+      return note.height > 0 && note.bottom > box.bottom + 1;
+    });
+    for (const view of spilled) {
+      const parent = view.host.parentElement;
+      if (!parent) continue;
+      view.anchor = parent;
+      placeAfter(parent, view.host);
+    }
+    pending = spilled;
+  }
 }
 
 function anchorStillFits(view: FieldView, field: HTMLElement): boolean {
@@ -379,7 +434,7 @@ function showFieldWarning(field: Field, category: WarnCategory, anchor: Element)
     view.category = category;
     view.maskable = maskable;
     if (!anchorStillFits(view, field)) view.anchor = anchor;
-    if (!view.host.isConnected || view.anchor.nextElementSibling !== view.host) restoreFieldReminder(field, "move");
+    if (!view.host.isConnected || !sitsAfter(view.anchor, view.host)) restoreFieldReminder(field, "move");
   }
   refreshView(field, view);
 }
@@ -409,7 +464,7 @@ function panelSpot(field: HTMLElement): Element {
 function panelMisplaced(): boolean {
   if (!panelHost) return false;
   if (!panelHost.isConnected) return true;
-  return !!panelAfter && panelAfter.isConnected && panelAfter.nextElementSibling !== panelHost;
+  return !!panelAfter && panelAfter.isConnected && !sitsAfter(panelAfter, panelHost);
 }
 
 function showPanel(concerns: ConcernKind[], near: HTMLElement): void {
@@ -504,12 +559,20 @@ interface Pending {
 function considerAll(fields: Iterable<HTMLElement>): void {
   if (!running) return;
   const pending: Pending[] = [];
+  let pageConcern: boolean | null = null;
+  // Email, password, and phone fields are on nearly every page. They warn only where the page gives a
+  // reason: it loaded over HTTP, the field's form submits over HTTP, or the address is a lookalike.
+  const siteGivesReason = (field: Field): boolean => {
+    pageConcern ??= collectConcerns({ pageUrl: location.href, hostname: location.hostname, sensitiveFormActions: [] }).length > 0;
+    return pageConcern || resolvesToHttp(field.form?.getAttribute("action") ?? null, location.href);
+  };
   withLabelIndex(() => {
     for (const field of fields) {
       if (!isFieldElement(field) || !field.isConnected || insideOurs(field)) continue;
       const snapshot = extractField(field);
       const detection = snapshot ? classifyField(snapshot) : null;
-      if (!snapshot || !detection?.warn || detection.category === "none") {
+      const quiet = !!detection && needsSiteConcern(detection.category) && !siteGivesReason(field);
+      if (!snapshot || !detection?.warn || detection.category === "none" || quiet) {
         clearUi(field);
         book.release(field);
         continue;
@@ -522,6 +585,7 @@ function considerAll(fields: Iterable<HTMLElement>): void {
   });
   concernCache = null;
   for (const item of pending) showFieldWarning(item.field, item.category, item.anchor);
+  settlePlacement(pending.flatMap((item) => views.get(item.field) ?? []));
   const key = concernsNow().join(",");
   if (key !== concernKey) {
     concernKey = key;
@@ -638,7 +702,7 @@ function restoreFieldReminder(field: HTMLElement, reason: "move" | "style"): voi
   const view = views.get(field);
   if (!view || !book.hasActive(field) || !field.isConnected) return;
   if (!anchorStillFits(view, field)) view.anchor = anchorFor(field);
-  const misplaced = !view.host.isConnected || view.anchor.nextElementSibling !== view.host;
+  const misplaced = !view.host.isConnected || !sitsAfter(view.anchor, view.host);
   if (reason === "move" && !misplaced) return;
   const decision = consumeRepair(view.repairs, Date.now());
   view.repairs = decision.budget;

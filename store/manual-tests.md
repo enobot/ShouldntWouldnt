@@ -1,13 +1,13 @@
 # Manual checks
 
-Version 0.1.2. Most of what used to be checked by hand is now automated in a real browser
+Version 0.1.3. Most of what used to be checked by hand is now automated in a real browser
 (`npm run test:browser`, Playwright's Chromium 156 with the unpacked extension; see
 [SECURITY_AUDIT.md](../SECURITY_AUDIT.md)). The checks below are the ones automation cannot do, or
 that must be repeated in branded Chrome with the real release ZIP before submission. Do not type real
 personal information. The values below are synthetic.
 
 Serve the fake pages, then load the unpacked extension after `npm test` and `npm run build`, or unzip
-`release/shouldnt-wouldnt-0.1.2.zip` after `npm run package`:
+`release/shouldnt-wouldnt-0.1.3.zip` after `npm run package`:
 
 ```bash
 python3 -m http.server 8765 --bind 127.0.0.1

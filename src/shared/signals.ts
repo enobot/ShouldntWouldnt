@@ -162,7 +162,7 @@ function isLookalikeHostname(hostname: string): boolean {
   return false;
 }
 
-function resolvesToHttp(action: string | null, pageUrl: string): boolean {
+export function resolvesToHttp(action: string | null, pageUrl: string): boolean {
   if (action === null) return false;
   try {
     return new URL(action, pageUrl).protocol === "http:";

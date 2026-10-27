@@ -8,7 +8,7 @@ Think Twice Before You Share.
 
 Shouldn't Wouldn't is a free Chrome extension that shows a short, calm note beside a web-form field
 when the field appears to ask for something sensitive, such as a Social Security number, card number,
-bank account, or password. For the most sensitive numbers it can also draw dots instead of the
+bank account, or the answer to a security question. For the most sensitive numbers it can also draw dots instead of the
 characters while you type, so people nearby or on a screen share cannot read them.
 
 I built it for parents and other adults who are not software specialists: people who would benefit
@@ -20,18 +20,28 @@ Everything happens in the browser. The extension reads field labels, not what yo
 on/off setting, and makes no network requests.
 
 **Status:** version 0.1.1 was submitted to the Chrome Web Store on October 26, 2026 and is pending
-Google's review. It is not installable from the store yet. Version 0.1.2, in this repository, fixes a
-display bug found after submission and will be uploaded when that review finishes. The repository was first named SurfSafe;
+Google's review. It is not installable from the store yet. Version 0.1.3, in this repository, will be uploaded
+when that review finishes. It fixes a display bug found after submission (0.1.2), stops reminders for
+email, password, and phone fields on ordinary HTTPS pages, adds maiden names, security answers, and
+license plates, and keeps notes out of the page's own field boxes. The repository was first named SurfSafe;
 GitHub redirects the old address.
 
 ## Features
 
-Implemented (version 0.1.2 in this repository; 0.1.1 is the submitted version):
+Implemented (version 0.1.3 in this repository; 0.1.1 is the submitted version):
 
 - **Field reminders.** A red outline and a note beside fields that appear to ask for a Social Security
   number, card number, card security code, bank account or routing number, government ID, passport,
-  driver's license, password, or health information. Address, phone, email, and date of birth get
-  milder wording. Comment boxes, search boxes, and drop-downs stay quiet.
+  driver's license, license plate, maiden name, the answer to a security question, or health
+  information. Address and date of birth get milder wording. Comment boxes, search boxes, and the
+  drop-down that picks a security question stay quiet.
+- **Email, password, and phone only when there is a reason.** These appear on nearly every sign-in page,
+  so I decided they get a reminder only where the page gives a reason: it loaded over plain HTTP, its
+  form would send over HTTP, or its address is a lookalike of a well-known name (a fake bank sign-in,
+  for example). On an ordinary HTTPS page they stay quiet.
+- **Placement.** A note goes on its own line below the field, outside the field's label and outside
+  any box or row the page draws around the field, so it does not squeeze the field or cover the
+  buttons below it.
 - **"Why am I seeing this?"** A plain explanation of what the field seems to ask for and why it
   matters. Each note can be dismissed for that page.
 - **On-screen masking.** For Social Security, card, bank, routing, government ID, passport, and
@@ -145,8 +155,8 @@ and writes the icons. `dist/` is not committed.
 2. In Chrome, open `chrome://extensions`, turn on Developer mode, choose Load unpacked, and select the
    repository root (or the unzipped package folder).
 3. Pin Shouldn't Wouldn't from the puzzle-piece menu.
-4. Open a page with a sign-in or payment form. A note appears under fields such as a password or card
-   number. Use Show, Why am I seeing this?, or Dismiss in the note.
+4. Open a page with a payment form. A note appears under fields such as the card number.
+   (Email and password fields on an ordinary HTTPS page stay quiet.) Use Show, Why am I seeing this?, or Dismiss in the note.
 5. Click the toolbar button to see the page summary and the on/off switch.
 
 To try the mock pages, serve the repository over `http` (content scripts do not run on `file://`
@@ -163,7 +173,7 @@ python3 -m http.server 8765 --bind 127.0.0.1
 | `npm test` | Typecheck, then unit tests: detection rules, labeled accuracy cases, note wording, masking choice, site signals, message validation, the settings rule, store text, and the privacy source scan |
 | `npm run browsers` | Downloads Playwright's Chromium into `.cache/` (needed once for the browser tests) |
 | `npm run test:browser` | Real-browser tests against the build: detection on real pages, masking, accessibility names, site notes and paused submits, hostile pages, popup and settings, the privacy probe, and the release package. Run `npm run build` and `npm run package` first |
-| `npm run accuracy` | Precision and recall of the detection rules on 151 tuning cases and 54 held-out cases |
+| `npm run accuracy` | Precision and recall of the detection rules on 164 tuning cases and 54 held-out cases |
 | `npm run package` | Builds `release/shouldnt-wouldnt-<version>.zip` and refuses to include tests, TypeScript sources, or source maps |
 | `npm run bench` | Page benchmark against a no-extension baseline ([PERFORMANCE_AUDIT.md](PERFORMANCE_AUDIT.md)) |
 
@@ -260,6 +270,13 @@ Each item below is documented in the audit reports with the fix and its regressi
 - **Large pages.** Looking for closed shadow roots asked Chrome about every element: 32,520 calls on the
   30,000-element test page. The lookup now runs only on custom elements, and site checks run once per
   batch instead of once per field (SW-08).
+- **Notes landed inside the page's own field boxes.** On a real sign-up page (Shopify), I saw a note
+  placed right after the input end up inside the page's fixed-height flex row, squeeze the input, and
+  spill over the Continue button. Notes now move out of labels and side-by-side rows, and a note that
+  still spills out of its box moves after it (0.1.3).
+- **Too many notes.** On another real sign-up page (Apple), every email, password, and phone field got a
+  full note, including the phone country-code drop-down. That made the reminders easy to ignore, so
+  email, password, and phone now wait for a reason on the page, and drop-downs never get them (0.1.3).
 - **False alarms.** Sign-in codes were taken for card security codes, library and loyalty cards for
   payment cards, and country sites such as `amazon.com.au` for lookalikes. Rules were tightened and
   measured against a separate held-out set (SW-10, SW-11, [DETECTION_ACCURACY.md](DETECTION_ACCURACY.md)).
@@ -268,10 +285,10 @@ Each item below is documented in the audit reports with the fix and its regressi
 
 Known limitations:
 
-- **Known bug in the submitted 0.1.1, fixed in 0.1.2:** notes for fields that are not masked (password,
+- **Known bug in the submitted 0.1.1, fixed in 0.1.2 and later:** notes for fields that are not masked (password,
   email, phone, address, date of birth, card security code, health) show an empty bordered button where
   Show goes, which is also an extra keyboard stop. The note's button style overrode the `hidden`
-  attribute. It was found after submission, during zoom and high-contrast checks. 0.1.2 is not in the
+  attribute. It was found after submission, during zoom and high-contrast checks. The fix is not in the
   store until the 0.1.1 review finishes.
 - Rules, not a model, and English only: labels that do not resemble the patterns are missed.
 - Fields in cross-origin frames that are not `http`/`https`, closed shadow roots on built-in elements,
@@ -284,8 +301,7 @@ Known limitations:
 
 Future work:
 
-- Upload 0.1.2, with the empty Show button fix, once the 0.1.1 review finishes.
-- Decide whether email and phone fields keep inline notes; they appear on most sign-in forms.
+- Upload 0.1.3 once the 0.1.1 review finishes.
 - A screen-reader pass with NVDA or VoiceOver, and the other hand checks in
   [store/manual-tests.md](store/manual-tests.md).
 - Generate the benchmark results into [PERFORMANCE_AUDIT.md](PERFORMANCE_AUDIT.md).

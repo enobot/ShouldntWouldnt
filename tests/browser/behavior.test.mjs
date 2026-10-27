@@ -97,7 +97,8 @@ describe("detection on real pages", () => {
     assert.equal(await page.locator("[data-shouldnt-wouldnt]").count(), 0);
     await page.click("#add");
     await page.waitForSelector("#ssn[data-shouldnt-wouldnt=marked]");
-    await page.goto("https://shop.test/fixtures/spa.html");
+    // Over http, so the password fields in this page get reminders (on https they stay quiet).
+    await page.goto("http://shop.test/fixtures/spa.html");
     await page.click("#draw");
     await page.waitForSelector("input[type=password][data-shouldnt-wouldnt=marked]");
     await page.click("#replace");
@@ -107,7 +108,8 @@ describe("detection on real pages", () => {
   });
 
   test("open and closed shadow roots in custom elements are scanned", async () => {
-    const page = await open("https://shop.test/fixtures/perf/lazy-components.html");
+    // Over http, so every sensitive kind in these sections warns, including email and password.
+    const page = await open("http://shop.test/fixtures/perf/lazy-components.html");
     await page.waitForFunction(() => document.documentElement.hasAttribute("data-lazy-done"));
     await page.waitForTimeout(400);
     const inOpenRoot = await page.evaluate(() => {
@@ -117,6 +119,68 @@ describe("detection on real pages", () => {
     assert.equal(inOpenRoot, "marked");
     const notes = await inspectNotes(page);
     assert.equal(notes.length >= 9, true, `expected a note per sensitive field, got ${notes.length}`);
+    await page.close();
+  });
+
+  test("on https, email, password, and phone stay quiet; over http they get reminders", async () => {
+    const page = await open("https://shop.test/fixtures/email-phone.html");
+    await page.waitForTimeout(600);
+    assert.equal(await page.locator("[data-shouldnt-wouldnt]").count(), 0, "email and phone on https");
+    await page.goto("https://shop.test/fixtures/password.html");
+    await page.waitForTimeout(600);
+    assert.equal(await page.locator("[data-shouldnt-wouldnt]").count(), 0, "password on https");
+    await page.goto("http://shop.test/fixtures/email-phone.html");
+    await page.waitForSelector("[data-shouldnt-wouldnt=marked]");
+    await page.goto("http://shop.test/fixtures/password.html");
+    await page.waitForSelector("input[type=password][data-shouldnt-wouldnt=marked]");
+    await page.close();
+  });
+
+  test("maiden names, security answers, and license plates get reminders; the question drop-down does not", async () => {
+    const page = await open("https://shop.test/fixtures/account-recovery.html");
+    await page.waitForSelector("#plate[data-shouldnt-wouldnt=marked]");
+    await page.waitForTimeout(300);
+    for (const id of ["maiden", "answer", "plate"]) assert.equal(await marked(page, `#${id}`), true, id);
+    for (const id of ["question", "email", "password"]) assert.equal(await marked(page, `#${id}`), false, id);
+    await page.close();
+  });
+
+  test("a note sits below the field's own box or row, never inside it", async () => {
+    const page = await open("https://shop.test/fixtures/wrapped-fields.html");
+    await page.waitForSelector("#routing[data-shouldnt-wouldnt=marked]");
+    await page.waitForTimeout(400);
+    const layout = await page.evaluate(() => {
+      const rect = (el) => el.getBoundingClientRect();
+      const box = document.getElementById("card-box");
+      const pair = document.getElementById("pair");
+      const afterBox = box.nextElementSibling;
+      return {
+        noteAfterBox: !!afterBox?.classList.contains("shouldnt-wouldnt-host"),
+        noteInsideBox: !!box.querySelector(".shouldnt-wouldnt-host"),
+        cardFillsBox: rect(document.getElementById("card")).width >= rect(box).width - 30,
+        noteAboveButton: rect(afterBox).bottom <= rect(document.getElementById("continue")).top + 1,
+        notesAfterPair: [pair.nextElementSibling, pair.nextElementSibling?.nextElementSibling].every((el) =>
+          el?.classList.contains("shouldnt-wouldnt-host"),
+        ),
+        noteInsidePair: !!pair.querySelector(".shouldnt-wouldnt-host"),
+        pairOnOneRow: Math.abs(rect(document.getElementById("bank")).top - rect(document.getElementById("routing")).top) < 1,
+      };
+    });
+    assert.deepEqual(layout, {
+      noteAfterBox: true,
+      noteInsideBox: false,
+      cardFillsBox: true,
+      noteAboveButton: true,
+      notesAfterPair: true,
+      noteInsidePair: false,
+      pairOnOneRow: true,
+    });
+    const notes = await inspectNotes(page);
+    assert.match(notes[1].texts.join(" "), /bank account number/, "notes that share a row keep the fields' order");
+    assert.match(notes[2].texts.join(" "), /routing number/);
+    await page.waitForTimeout(1500);
+    const summary = await summaryFor("https://shop.test/fixtures/wrapped-fields.html*");
+    assert.equal(summary.reminderHidden, false, "notes that share a row are not mistaken for notes the page removed");
     await page.close();
   });
 });
@@ -250,7 +314,8 @@ describe("accessibility", () => {
   });
 
   test("a note for a field that is not masked shows no empty Show button", async () => {
-    const page = await open("https://shop.test/fixtures/masking.html");
+    // Over http, so the password and email fields get (unmasked) reminders.
+    const page = await open("http://shop.test/fixtures/masking.html");
     await page.waitForSelector("#email[data-shouldnt-wouldnt=marked]");
     const notes = await inspectNotes(page);
     for (const pattern of [/asking for your password/, /asks for your email address/]) {
@@ -310,11 +375,13 @@ describe("site notes and paused submits", () => {
   });
 
   test("country sites of a brand get no lookalike note, and a brand-plus-login host does", async () => {
+    // A real country site over https gives no reason to warn about a password at all.
     const quiet = await open("https://www.amazon.com.au/fixtures/password.html");
-    await quiet.waitForSelector("[data-shouldnt-wouldnt=marked]");
+    await quiet.waitForTimeout(600);
     await quiet.focus("input[type=password]");
     await quiet.waitForTimeout(300);
-    assert.equal(await quiet.locator(".shouldnt-wouldnt-host").count(), 1);
+    assert.equal(await quiet.locator("[data-shouldnt-wouldnt]").count(), 0);
+    assert.equal(await quiet.locator(".shouldnt-wouldnt-host").count(), 0);
     await quiet.close();
     const lookalike = await open("https://paypal-login.test/fixtures/password.html");
     await lookalike.waitForSelector("[data-shouldnt-wouldnt=marked]");
@@ -362,10 +429,10 @@ describe("hostile pages", () => {
 
 describe("popup and settings", () => {
   test("the popup describes the top page, not an embedded frame", async () => {
-    const page = await open("https://shop.test/fixtures/frames.html");
+    const page = await open("http://shop.test/fixtures/frames.html");
     await page.waitForTimeout(800);
     for (let i = 0; i < 5; i += 1) {
-      const summary = await summaryFor("https://shop.test/fixtures/frames.html*");
+      const summary = await summaryFor("http://shop.test/fixtures/frames.html*");
       assert.equal(summary.hostname, "shop.test");
       assert.equal(summary.sensitiveCount, 1);
     }
@@ -393,7 +460,7 @@ describe("popup and settings", () => {
     await page.reload();
     await page.waitForTimeout(600);
     assert.equal(await page.locator("[data-shouldnt-wouldnt]").count(), 0, "still off after the worker stopped");
-    const second = await open("https://shop.test/fixtures/password.html");
+    const second = await open("https://shop.test/fixtures/bank.html");
     await second.waitForTimeout(600);
     assert.equal(await second.locator("[data-shouldnt-wouldnt]").count(), 0, "still off in a new tab");
     await popup.reload();

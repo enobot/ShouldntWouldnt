@@ -3,8 +3,11 @@
 Version 0.1.1 was submitted to the Chrome Web Store on October 26, 2026 and is pending Google's
 compliance review. Google has not approved or published it yet. On submission the dashboard warned that
 broad host permissions may need an in-depth review, which can take longer; the permissions were kept on
-purpose (see "Permission justifications"). Version 0.1.2, which fixes a display bug found after
-submission, is packaged and waits for that review to finish before upload. This file replaces `store/submission-checklist.md` as the
+purpose (see "Permission justifications"). Version 0.1.3 is packaged and waits for that review to finish
+before upload. It fixes a display bug found after submission, keeps notes out of the page's own field
+boxes, stops reminders for email, password, and phone fields on ordinary HTTPS pages, and adds maiden
+names, security answers, and license plates. Its listing text in `store/listing-detailed.md` changed to
+match; paste the new text into the dashboard with the 0.1.3 upload. This file replaces `store/submission-checklist.md` as the
 working list; that file now points here.
 
 Policy sources checked on October 26, 2026:
@@ -30,7 +33,7 @@ Policy sources checked on October 26, 2026:
 | Submission | **Submitted** October 26, 2026 by the account owner; pending review |
 | Manifest V3, permissions, CSP, no remote code | **Done** (verified by tests) |
 | Working popup, reliable reminders, masking | **Done** in Chromium automation; still needs a person to click through `store/manual-tests.md` in branded Chrome |
-| Release ZIP | **Done**: `npm run build && npm run package` writes `release/shouldnt-wouldnt-<version>.zip` (currently 0.1.2; 16 files: the manifest, popup, styles, icons, the bundled content script, and only the modules the service worker and popup import; no tests, no TypeScript, no source maps); `tests/browser/release.test.mjs` unzips it, loads it, and checks that a reminder appears, the popup renders, and the packaged worker saves the switch |
+| Release ZIP | **Done**: `npm run build && npm run package` writes `release/shouldnt-wouldnt-<version>.zip` (currently 0.1.3; 16 files: the manifest, popup, styles, icons, the bundled content script, and only the modules the service worker and popup import; no tests, no TypeScript, no source maps); `tests/browser/release.test.mjs` unzips it, loads it, and checks that a reminder appears, the popup renders, and the packaged worker saves the switch |
 | Privacy policy matches the code | **Done** (`store/privacy-policy.md`, updated for masking, the badge, and the store's data disclosure) |
 | Privacy policy at a public HTTPS URL | **Done**: https://github.com/enobot/ShouldntWouldnt/blob/main/store/privacy-policy.md (pushed October 26, 2026) |
 | Support email works | **Blocker until checked**: `support@shouldntwouldnt.com` is used consistently. The domain has mail (MX) records pointing to Google, so an inbox may exist; delivery was not tested |
@@ -39,11 +42,11 @@ Policy sources checked on October 26, 2026:
 | Store icon | Acceptable: `icons/icon128.png`, 128×128 PNG. It is a plain generated mark drawn edge to edge, not the 96×96-with-padding layout Google suggests. A designed icon is recommended, not required |
 | Data-use disclosures | **Entered** by the account owner at submission; the prepared answers are under "Privacy practices tab" below |
 | Developer account, 2-Step Verification, trader declaration | **Done** by the account owner |
-| Product decision on email/phone reminders | **Open** (see below) |
+| Product decision on email/phone reminders | **Decided** October 26, 2026 (see below) |
 
 ## Completed requirements
 
-- [x] `manifest_version: 3`, version `0.1.2` in both `manifest.json` and `package.json` (the package
+- [x] `manifest_version: 3`, version `0.1.3` in both `manifest.json` and `package.json` (the package
       script refuses to build if they differ).
 - [x] Name "Shouldn't Wouldn't" (18 characters); manifest description 90 characters, under the 132 limit.
 - [x] Permissions: `storage` plus host access to `http://*/*` and `https://*/*`. No optional
@@ -151,8 +154,9 @@ in the dashboard.
 
 ## Test instructions for the reviewer (optional field)
 
-> No account or setup is needed. Open any page with a sign-in or payment form, for example a page with a
-> password or card number field. A short note appears under the field. Click the toolbar button to see
+> No account or setup is needed. Open any page with a payment form, for example a checkout page with a
+> card number field. A short note appears under the field. (Email and password fields on an ordinary
+> HTTPS page get no note by design.) Click the toolbar button to see
 > the popup summary and the on/off switch. The extension makes no network requests.
 
 ## Submission
@@ -173,18 +177,18 @@ After submission:
       masked show an empty Show button. Fixed in 0.1.2.
 - [ ] The hand checks still listed in `store/manual-tests.md` (screen reader, password manager, real
       toolbar popup, address autofill).
-- [ ] Upload `release/shouldnt-wouldnt-0.1.2.zip` from the dashboard once the 0.1.1 review finishes.
-- [ ] Decide the open product question below.
+- [ ] Upload `release/shouldnt-wouldnt-0.1.3.zip` from the dashboard once the 0.1.1 review finishes, and
+      paste the updated description and test instructions.
 
 If the review rejects the item, Google's email names the policy it applied. Fix that, then rebuild and
 package, and upload the new ZIP from the dashboard.
 
-## Open product decision
+## Product decision on email, password, and phone (decided October 26, 2026)
 
-Email and phone fields get the milder reminder. They appear on nearly every sign-in and newsletter
-form, so the extension will show a note on most sites a person uses. That is accurate but frequent, and
-frequent notes teach people to ignore them. Options: keep as is; keep the outline and popup count but
-drop the inline note for email and phone; or drop those two kinds. Not changed in this audit.
+These fields appear on nearly every sign-in and newsletter form, and frequent notes teach people to
+ignore them. Decision by the account owner, in 0.1.3: Email, password, and phone fields get a reminder only where the page gives a reason: it loaded over plain HTTP, its form would send over HTTP, or its address imitates a well-known site. The lookalike case is kept because a
+fake sign-in page over HTTPS is exactly where a password reminder matters, and the site note only appears
+next to a warned field.
 
 ## Do not claim
 

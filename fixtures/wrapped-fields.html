@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Wrapped fields</title>
+    <link rel="stylesheet" href="common.css" />
+    <style>
+      /* A field drawn inside its own box: a flex row of fixed height with a floating label, as many
+         sign-up and checkout pages do. A note placed inside it would squeeze the field and spill over
+         the button below. */
+      .box {
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        height: 56px;
+        padding: 0 12px 6px;
+        border: 1px solid #8a7a7d;
+        border-radius: 10px;
+        box-sizing: border-box;
+      }
+      .box label {
+        position: absolute;
+        top: 6px;
+        left: 12px;
+        margin: 0;
+        font-size: 12px;
+      }
+      .box input {
+        flex: 1;
+        border: 0;
+        outline: none;
+      }
+      /* Two fields side by side in one grid row. */
+      .pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      .pair label {
+        margin: 0;
+      }
+      .pair input {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Wrapped fields</h1>
+    <p class="note">Fake labels only. Each note should sit below the field's box or row, not inside it.</p>
+    <form action="#paid" method="get">
+      <div class="box" id="card-box">
+        <label for="card">Card number</label>
+        <input id="card" name="cardnumber" autocomplete="cc-number" inputmode="numeric" />
+      </div>
+      <button id="continue" type="submit">Continue</button>
+      <div class="pair" id="pair">
+        <label>Bank account number <input id="bank" name="bank" /></label>
+        <label>Routing number <input id="routing" name="routing" /></label>
+      </div>
+      <button type="submit">Save</button>
+    </form>
+  </body>
+</html>

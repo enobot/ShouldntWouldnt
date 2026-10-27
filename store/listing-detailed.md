@@ -1,6 +1,6 @@
 # Chrome Web Store detailed description
 
-Version 0.1.1 was submitted to the Chrome Web Store on October 26, 2026 and is pending review. Everything below the line is the text prepared for the dashboard's Description field; keep this file in step with the dashboard if the listing changes. It describes versions 0.1.1 and 0.1.2 as of October 26, 2026; 0.1.2 changes no behavior described here. Do not publish a sentence from this file if the code no longer does that thing. Publish it as a free item; the extension does not process payments.
+Version 0.1.1 was submitted to the Chrome Web Store on October 26, 2026 and is pending review. Everything below the line is the text prepared for the dashboard's Description field; keep this file in step with the dashboard if the listing changes. It describes version 0.1.3, the version to upload after the 0.1.1 review. The submitted 0.1.1 also warned about email, password, and phone fields on every page and did not know maiden names, security answers, or license plates. Do not publish a sentence from this file if the code no longer does that thing. Publish it as a free item; the extension does not process payments.
 
 ---
 
@@ -10,7 +10,7 @@ It is meant for parents and other adults who want a calm reminder, not an alarm.
 
 The note is based on the field itself: its type, name, id, autocomplete hint, placeholder, label, and nearby description. Shouldn't Wouldn't does not read what you type into the form. It does not read passwords, card numbers, Social Security numbers, or comments. It only uses those labels to notice that the page is asking.
 
-You may see a reminder for a Social Security number, card number, card security code, bank account number, routing number, government ID, passport, driver's license, or password. A milder reminder may appear for an address, phone number, email address, or date of birth. A health or medical field uses the stronger wording. Ordinary fields, including comment boxes, are left alone.
+You may see a reminder for a Social Security number, card number, card security code, bank account number, routing number, government ID, passport, driver's license, license plate, maiden name, or the answer to a security question. A health or medical field uses the same stronger wording. A milder reminder may appear for an address or date of birth. Email, password, and phone fields get a reminder only where the page gives a reason: it loaded over plain HTTP, its form would send over HTTP, or its address imitates a well-known site. Ordinary fields, including comment boxes, are left alone.
 
 Some websites show a Social Security or card number in plain text as you type it. For those numbers (Social Security, card, bank account, routing, government ID, passport, driver's license), Shouldn't Wouldn't shows dots instead, so people nearby or on a screen share cannot read them. Press Show in the note to see what you typed, and Hide to cover it again. This only changes your screen. The website still receives what you enter, and the extension does not read it.
 

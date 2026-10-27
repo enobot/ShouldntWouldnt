@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { classifyField } from "../src/shared/detect.js";
+import { classifyField, needsSiteConcern } from "../src/shared/detect.js";
 import type { FieldSnapshot } from "../src/shared/types.js";
 import { field } from "./helpers.js";
 
@@ -38,7 +38,28 @@ describe("real-world field roles", () => {
   test("known misses and a known extra warning", () => {
     expectQuiet(field({ nearbyText: "Social Security number" }));
     expectQuiet(field({ labelText: "Social" }));
-    expectQuiet(field({ name: "maiden", labelText: "Mother's maiden name" }));
     expectWarn(field({ labelText: "Account number" }), "bank");
+  });
+
+  test("account recovery and vehicle fields", () => {
+    expectWarn(field({ name: "maiden", labelText: "Mother's maiden name" }), "maiden-name");
+    expectWarn(field({ labelText: "What was the make of your first car?" }), "security-answer");
+    expectWarn(field({ type: "password", labelText: "Security answer" }), "security-answer");
+    expectWarn(field({ labelText: "License plate" }), "license-plate");
+    expectQuiet(field({ tag: "select", type: "select-one", labelText: "Choose a security question" }));
+    expectWarn(field({ labelText: "Driver's license number" }), "drivers-license");
+  });
+
+  test("drop-downs never get number, answer, password, email, or phone reminders", () => {
+    expectQuiet(field({ tag: "select", type: "select-one", labelText: "Country code", autocomplete: "tel-country-code" }));
+    expectQuiet(field({ tag: "select", type: "select-one", labelText: "Phone type" }));
+    expectQuiet(field({ tag: "select", type: "select-one", labelText: "Mobile phone carrier", name: "phone" }));
+  });
+
+  test("email, password, and phone wait for a site concern; the rest do not", () => {
+    for (const category of ["email", "password", "phone"] as const) assert.equal(needsSiteConcern(category), true, category);
+    for (const category of ["ssn", "card", "bank", "maiden-name", "security-answer", "license-plate", "dob", "address", "health", "none"] as const) {
+      assert.equal(needsSiteConcern(category), false, category);
+    }
   });
 });

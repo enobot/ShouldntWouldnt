@@ -11,6 +11,12 @@ export const FIELD_COPY: Record<WarnCategory, string> = {
   "drivers-license":
     "Sensitive Information: This website appears to be asking for your driver's license number. Only share this information with organizations you trust.",
   passport: "Sensitive Information: This website appears to be asking for your passport number. Only share this information with organizations you trust.",
+  "license-plate":
+    "Sensitive Information: This website appears to be asking for your license plate number. Only share this information with organizations you trust.",
+  "maiden-name":
+    "Sensitive Information: This website appears to be asking for a maiden name. Only share this information with organizations you trust.",
+  "security-answer":
+    "Sensitive Information: This website appears to be asking for the answer to a security question. Make sure you recognize and trust this website.",
   "government-id":
     "Sensitive Information: This website appears to be asking for a government ID number. Only share this information with organizations you trust.",
   health:
@@ -30,6 +36,9 @@ const KIND: Record<WarnCategory, string> = {
   password: "a password",
   "drivers-license": "a driver's license number",
   passport: "a passport number",
+  "license-plate": "a license plate number",
+  "maiden-name": "a maiden name",
+  "security-answer": "the answer to a security question",
   "government-id": "a government ID number",
   health: "health or medical information",
   email: "an email address",
@@ -47,6 +56,9 @@ const BECAUSE: Record<WarnCategory, string> = {
   password: "A password can let someone into an account, so check that you are on the correct website first.",
   "drivers-license": "A license number can be used to impersonate you, so share it only with an organization you trust.",
   passport: "A passport number is a strong identity document, so share it only with an organization you trust.",
+  "license-plate": "A license plate links you to your vehicle, so share it only with an organization you trust.",
+  "maiden-name": "Banks and other accounts often use a maiden name to confirm who you are or to reset a password, so share it only with an organization you trust.",
+  "security-answer": "Security answers can let someone reset your passwords and get into your accounts, so check that you are on the correct website first.",
   "government-id": "A government ID number can be used to impersonate you, so share it only with an organization you trust.",
   health: "Health details are private, so share them only with an organization you trust.",
   email: "An email address is a way for this website to contact you or to identify you.",

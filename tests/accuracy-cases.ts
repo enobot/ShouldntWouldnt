@@ -179,8 +179,6 @@ export const ACCURACY_CASES: AccuracyCase[] = [
   { id: "plain-subject", field: { labelText: "Subject" }, expect: "none", pattern: "contact form" },
   { id: "plain-nickname", field: { labelText: "Nickname" }, expect: "none", pattern: "profile" },
   { id: "plain-title", field: { labelText: "Title" }, expect: "none", pattern: "review form" },
-  { id: "plain-maiden", field: { labelText: "Mother's maiden name" }, expect: "none", pattern: "security question" },
-  { id: "plain-security-answer", field: { labelText: "Security question answer" }, expect: "none", pattern: "security question" },
   { id: "plain-amount", field: { labelText: "Amount", name: "amount" }, expect: "none", pattern: "donation" },
   { id: "plain-reference", field: { labelText: "Reference number" }, expect: "none", pattern: "support form" },
   { id: "plain-confirmation", field: { labelText: "Confirmation number" }, expect: "none", pattern: "booking lookup" },
@@ -195,4 +193,23 @@ export const ACCURACY_CASES: AccuracyCase[] = [
   { id: "tel-ssn", field: { type: "tel", labelText: "SSN", name: "ssn", placeholder: "XXX-XX-XXXX" }, expect: "ssn", pattern: "mobile-friendly benefits form" },
   { id: "tel-card", field: { type: "tel", autocomplete: "cc-number", name: "cardnumber" }, expect: "card", pattern: "mobile-friendly checkout" },
   { id: "tel-phone", field: { type: "tel", labelText: "Phone number", name: "phone" }, expect: "phone", pattern: "contact form" },
+
+  // Added October 26, 2026, when maiden names, security answers, and license plates became kinds of their own
+  // (until then the first two were expected to stay quiet). Written together with those rules, so these
+  // are tuning cases, not held-out ones.
+  { id: "maiden-label", field: { labelText: "Mother's maiden name" }, expect: "maiden-name", pattern: "account recovery" },
+  { id: "maiden-camel", field: { name: "mothersMaidenName" }, expect: "maiden-name", pattern: "bank enrollment" },
+  { id: "security-answer-label", field: { labelText: "Security question answer" }, expect: "security-answer", pattern: "account recovery" },
+  { id: "security-answer-name", field: { labelText: "Answer", name: "securityAnswer1" }, expect: "security-answer", pattern: "account setup" },
+  { id: "security-first-pet", field: { labelText: "What was the name of your first pet?" }, expect: "security-answer", pattern: "question as the label" },
+  { id: "security-city-born", field: { labelText: "In what city were you born?" }, expect: "security-answer", pattern: "question as the label" },
+  { id: "security-memorable", field: { labelText: "Memorable word" }, expect: "security-answer", pattern: "UK bank sign-in" },
+  { id: "security-question-select", field: { tag: "select", type: "select-one", labelText: "Security question", name: "question1" }, expect: "none", pattern: "picking the question" },
+  { id: "security-question-own", field: { labelText: "Security question" }, expect: "none", pattern: "writing your own question" },
+  { id: "plate-label", field: { labelText: "License plate number", name: "plate" }, expect: "license-plate", pattern: "toll payment" },
+  { id: "plate-camel", field: { name: "licensePlate" }, expect: "license-plate", pattern: "parking app" },
+  { id: "plate-uk", field: { labelText: "Vehicle registration number" }, expect: "license-plate", pattern: "UK parking" },
+  { id: "plate-state-select", field: { tag: "select", type: "select-one", labelText: "License plate state" }, expect: "none", pattern: "toll payment" },
+  { id: "plain-plate-size", field: { labelText: "Plate size" }, expect: "none", pattern: "restaurant supply" },
+  { id: "phone-code-select", field: { tag: "select", type: "select-one", labelText: "Country code", autocomplete: "tel-country-code" }, expect: "none", pattern: "phone country code drop-down" },
 ];

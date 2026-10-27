@@ -25,8 +25,20 @@ const HIGH = new Set<WarnCategory>([
   "government-id",
   "passport",
   "drivers-license",
+  "license-plate",
+  "maiden-name",
+  "security-answer",
   "password",
 ]);
+
+/**
+ * Asked for on nearly every sign-in and sign-up page. They get a reminder only where the page gives a
+ * reason (plain HTTP, a form that submits over HTTP, or a lookalike address); see needsSiteConcern.
+ */
+const QUIET_ON_SECURE_PAGES = new Set<WarnCategory>(["email", "password", "phone"]);
+
+/** A drop-down cannot hold a typed number, answer, password, email, or phone number, so these never warn on one. */
+const NOT_ON_SELECT = new Set<WarnCategory>([...HIGH, "phone", "email"]);
 
 const PRIORITY: WarnCategory[] = [
   "password",
@@ -37,7 +49,10 @@ const PRIORITY: WarnCategory[] = [
   "routing",
   "passport",
   "drivers-license",
+  "license-plate",
   "government-id",
+  "maiden-name",
+  "security-answer",
   "health",
   "dob",
   "address",
@@ -168,6 +183,26 @@ function isLicense(text: string): boolean {
   );
 }
 
+function isLicensePlate(text: string): boolean {
+  return /\blicen[cs]e plate\b|\b(number|registration) plate\b|\bplate (number|no)\b|\bvehicle registration (number|no)\b/.test(text);
+}
+
+function isMaidenName(text: string): boolean {
+  return /\bmaiden( name)?\b/.test(text);
+}
+
+/** Questions sites use for account recovery, written as the label of the answer box. */
+const RECOVERY_QUESTION =
+  /\b(first|childhood) (pet|car|school|teacher|best friend|job|concert)\b|\bcity (were you|you were) born\b|\bborn in what city\b|\bstreet (did you|you) gr[eo]w up\b|\bfavou?rite (teacher|childhood)\b/;
+
+/** The answer to a security question. The drop-down that picks the question is not the answer. */
+function isSecurityAnswer(text: string): boolean {
+  if (/\b(security|secret|challenge|memorable) (question )?answer/.test(text)) return true;
+  if (/\banswer (to|for) (your |the |a )?(security|secret|challenge) question\b/.test(text)) return true;
+  if (/\bmemorable (word|information)\b/.test(text)) return true;
+  return RECOVERY_QUESTION.test(text);
+}
+
 function isPassword(text: string): boolean {
   if (/\b(hint|reminder)\b/.test(text)) return false;
   return /\b(password|passwd|pwd|passcode|passphrase)\b/.test(text);
@@ -222,6 +257,12 @@ function matches(category: WarnCategory, text: string): boolean {
       return isPassport(text);
     case "drivers-license":
       return isLicense(text);
+    case "license-plate":
+      return isLicensePlate(text);
+    case "maiden-name":
+      return isMaidenName(text);
+    case "security-answer":
+      return isSecurityAnswer(text);
     case "password":
       return isPassword(text);
     case "address":
@@ -316,8 +357,7 @@ export function classifyField(snapshot: FieldSnapshot): Detection {
   if (snapshot.type === "password") best = specificOverType(found, "password") ?? best;
   if (snapshot.type === "tel") best = specificOverType(found, "phone") ?? best;
   if (snapshot.type === "url" && best.source === "nearby") return NONE;
-  // A drop-down list cannot hold a typed number, so the high-sensitivity number warnings do not apply to it.
-  if (snapshot.tag === "select" && HIGH.has(best.category)) return NONE;
+  if (snapshot.tag === "select" && NOT_ON_SELECT.has(best.category)) return NONE;
 
   const tier = tierOf(best.category);
   const minimum = tier === "high" ? HIGH_CONFIDENCE_MIN : CONTEXT_CONFIDENCE_MIN;
@@ -333,4 +373,9 @@ export function classifyField(snapshot: FieldSnapshot): Detection {
 
 export function isHighCategory(category: Category): boolean {
   return category !== "none" && HIGH.has(category);
+}
+
+/** True for kinds that warn only when the page has a site concern (HTTP page, HTTP form, lookalike). */
+export function needsSiteConcern(category: Category): boolean {
+  return category !== "none" && QUIET_ON_SECURE_PAGES.has(category);
 }

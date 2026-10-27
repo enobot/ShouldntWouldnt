@@ -1,6 +1,6 @@
 # Terms of use
 
-Shouldn't Wouldn't, versions 0.1.1 and 0.1.2. These terms describe this free extension. They are not a law firm's opinion. Contact: support@shouldntwouldnt.com
+Shouldn't Wouldn't, versions 0.1.1 to 0.1.3. These terms describe this free extension. They are not a law firm's opinion. Contact: support@shouldntwouldnt.com
 
 ## Completely free
 

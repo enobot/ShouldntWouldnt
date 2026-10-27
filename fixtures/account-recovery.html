@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Account recovery</title>
+    <link rel="stylesheet" href="common.css" />
+  </head>
+  <body>
+    <h1>Account recovery</h1>
+    <p class="note">
+      Fake labels only. The maiden name, the security answer, and the license plate should get reminders. The drop-down
+      that picks a question, the email, and the password should stay quiet on https.
+    </p>
+    <form action="#saved" method="get">
+      <label>Email <input id="email" type="email" name="email" autocomplete="email" /></label>
+      <label>Password <input id="password" type="password" name="password" autocomplete="new-password" /></label>
+      <label>Mother's maiden name <input id="maiden" name="maiden" /></label>
+      <label
+        >Security question
+        <select id="question" name="question">
+          <option>What was the name of your first pet?</option>
+          <option>In what city were you born?</option>
+        </select>
+      </label>
+      <label>Answer <input id="answer" name="securityAnswer" /></label>
+      <label>License plate number <input id="plate" name="plate" /></label>
+      <button type="submit">Save</button>
+    </form>
+  </body>
+</html>

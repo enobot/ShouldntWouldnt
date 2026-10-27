@@ -8,7 +8,7 @@ set of field examples, before and after this audit's changes.
 
 ## How it was measured
 
-- **Data:** [tests/accuracy-cases.ts](tests/accuracy-cases.ts) (151 cases, the *tuning set*) and
+- **Data:** [tests/accuracy-cases.ts](tests/accuracy-cases.ts) (151 cases at the audit, 164 since 0.1.3, the *tuning set*) and
   [tests/accuracy-holdout.ts](tests/accuracy-holdout.ts) (54 cases, the *held-out set*). Each case is
   the metadata of one realistic field, written to imitate common patterns: hosted checkouts, payment
   widgets, direct-deposit and benefits forms, sign-in and two-step pages, job and health intake forms,
@@ -34,6 +34,12 @@ Four tuning cases (`tel-*`) were added after the real-browser tests found that `
 kind of a bank-account field. They are marked in the file.
 
 ## Results
+
+Version 0.1.3 (October 26, 2026) added maiden names, security answers, and license plates, and 13
+tuning cases for them (two of which used to expect no warning). Those cases were written together with
+the new rules, so they are tuning cases. With them the tuning set is 164 cases (154 scored, 10
+ambiguous), all 154 correct; the held-out set is unchanged at 43 of 43. The tables below are the
+original audit's.
 
 ### Tuning set (151 cases: 141 scored, 10 ambiguous)
 
@@ -156,8 +162,10 @@ The rules are also exercised on real pages in Chromium (`npm run test:browser`):
   [PERFORMANCE_AUDIT.md](PERFORMANCE_AUDIT.md).
 - Custom controls that are not `input`, `textarea`, or `select` (for example a canvas or a `div` that
   draws its own text box) are not recognized.
-- Sign-in codes and security questions are deliberately not warned about. They are not in the current
-  categories.
-- Email and phone warnings appear on most sign-in and newsletter forms. They are the milder wording,
-  but they are frequent. Whether to keep them is a product decision, listed in
-  [CHROME_WEB_STORE_CHECKLIST.md](CHROME_WEB_STORE_CHECKLIST.md).
+- Sign-in codes are deliberately not warned about. Since 0.1.3 the answer to a security question is
+  ("Security answer", or the question itself as the label, such as "What was the name of your first
+  pet?"); the drop-down that picks the question is not, and an answer box labeled only "Answer" with no
+  security wording in its name or id is missed.
+- Since 0.1.3, email, password, and phone fields are classified as before but get a reminder only on a
+  page loaded over HTTP, a form that submits over HTTP, or a lookalike address. That rule lives in the
+  content script, not in the classifier these numbers measure.
