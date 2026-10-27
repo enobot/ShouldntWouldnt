@@ -4,7 +4,7 @@ Think Twice Before You Share.
 
 Shouldn't Wouldn't is a free Chrome extension for parents and other adults who are not software specialists. It shows a short, calm reminder when a web form appears to ask for sensitive information, and it can hide those characters on screen as you type them. It is a teaching aid. It is not antivirus software, it does not block typing, and it does not decide that a website is safe or malicious.
 
-The git repository is still named SurfSafe. That remote name is intentional. The product name is Shouldn't Wouldn't.
+The GitHub repository is `enobot/ShouldntWouldnt`. It was first named SurfSafe, and older clones may still point at that address, which GitHub redirects. The product name is Shouldn't Wouldn't.
 
 Version 0.1.1 has not been submitted to the Chrome Web Store and has not been reviewed by Google. Store text, the privacy policy, and the terms are in `store/`. What still needs a person before submission is in [CHROME_WEB_STORE_CHECKLIST.md](CHROME_WEB_STORE_CHECKLIST.md).
 

@@ -27,7 +27,7 @@ Policy sources checked on October 26, 2026:
 | Working popup, reliable reminders, masking | **Done** in Chromium automation; still needs a person to click through `store/manual-tests.md` in branded Chrome |
 | Release ZIP | **Done**: `npm run build && npm run package` writes `release/shouldnt-wouldnt-0.1.1.zip` (16 files: the manifest, popup, styles, icons, the bundled content script, and only the modules the service worker and popup import; no tests, no TypeScript, no source maps); `tests/browser/release.test.mjs` unzips it, loads it, and checks that a reminder appears, the popup renders, and the packaged worker saves the switch |
 | Privacy policy matches the code | **Done in draft** (`store/privacy-policy.md`, updated for masking, the badge, and the store's data disclosure) |
-| Privacy policy at a public HTTPS URL | **Blocker**: not hosted. See "Privacy policy URL" below |
+| Privacy policy at a public HTTPS URL | **Done**: https://github.com/enobot/ShouldntWouldnt/blob/main/store/privacy-policy.md (pushed October 26, 2026) |
 | Support email works | **Blocker until checked**: `support@shouldntwouldnt.com` is used consistently. The domain has mail (MX) records pointing to Google, so an inbox may exist; delivery was not tested |
 | Screenshots | **Done**: five 1280×800 PNGs in `store/assets/` (`npm run store-assets`) |
 | Small promo tile | **Done**: `store/assets/small-promo-tile.png`, 440×280 |
@@ -129,18 +129,12 @@ determine creditworthiness or for lending. All three are true of this code.
 
 ### Privacy policy URL
 
-Not hosted yet. Any public HTTPS page with the text of `store/privacy-policy.md` will do. Options, all
-needing the account owner:
+https://github.com/enobot/ShouldntWouldnt/blob/main/store/privacy-policy.md
 
-1. Commit and push this working tree, then use
-   `https://github.com/enobot/SurfSafe/blob/main/store/privacy-policy.md`. GitHub now holds the older
-   policy from commit `8b2b2ec`, which does not mention masking or the toolbar "!", so do not use that
-   address until the current file is pushed.
-2. A page on `shouldntwouldnt.com`. On October 26, 2026 that domain showed a Squarespace "Coming Soon"
-   page.
-3. A page on another site the owner controls.
-
-The URL must be live before submission, and the policy must keep matching the disclosures above.
+It shows the `main` branch, so a pushed edit to `store/privacy-policy.md` changes the published policy.
+Keep it matching the disclosures above. If the policy moves later (for example to a page on
+`shouldntwouldnt.com`, which showed a Squarespace "Coming Soon" page on October 26, 2026), update the URL
+in the dashboard.
 
 ## Distribution tab
 
@@ -156,7 +150,7 @@ The URL must be live before submission, and the policy must keep matching the di
 
 ## Final submission blockers
 
-1. Host `store/privacy-policy.md` at a public HTTPS URL and put that URL in the dashboard.
+1. Put the privacy policy URL above in the dashboard.
 2. Confirm `support@shouldntwouldnt.com` receives mail.
 3. A person loads the release ZIP in branded Chrome and runs `store/manual-tests.md`, including the
    real toolbar popup, a screen reader pass, and Chrome's own autofill on `fixtures/masking.html`.
