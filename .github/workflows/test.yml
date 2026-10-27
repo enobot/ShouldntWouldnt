@@ -13,6 +13,7 @@ jobs:
   unit:
     name: Typecheck, unit tests, build, package
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -33,6 +34,7 @@ jobs:
   browser:
     name: Real-browser tests (Playwright Chromium)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
