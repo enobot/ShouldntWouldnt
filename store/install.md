@@ -1,6 +1,6 @@
 # Install Shouldn't Wouldn't unpacked
 
-This is a developer load, not a Chrome Web Store install. The extension has not been submitted to the Chrome Web Store and has not been approved by Google.
+This is a developer load, not a Chrome Web Store install. Version 0.1.1 was submitted to the Chrome Web Store on October 26, 2026 and is pending review; Google has not approved it yet.
 
 1. Install Node.js 22 or newer.
 2. In this repository, run `npm install`, then `npm test`, then `npm run build`. The build writes `dist/content.js`, the compiled popup and service worker, and the icons. Load unpacked only after that build. `dist/` is not committed. To check exactly what would be uploaded, run `npm run package` and load the unzipped `release/shouldnt-wouldnt-0.1.1.zip` instead.

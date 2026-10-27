@@ -6,7 +6,7 @@ Shouldn't Wouldn't is a free Chrome extension for parents and other adults who a
 
 The GitHub repository is `enobot/ShouldntWouldnt`. It was first named SurfSafe, and older clones may still point at that address, which GitHub redirects. The product name is Shouldn't Wouldn't.
 
-Version 0.1.1 has not been submitted to the Chrome Web Store and has not been reviewed by Google. Store text, the privacy policy, and the terms are in `store/`. What still needs a person before submission is in [CHROME_WEB_STORE_CHECKLIST.md](CHROME_WEB_STORE_CHECKLIST.md).
+Version 0.1.1 was submitted to the Chrome Web Store on October 26, 2026 and is pending Google's review. It has not been approved or published yet. Store text, the privacy policy, and the terms are in `store/`. The submission record and what is still open are in [CHROME_WEB_STORE_CHECKLIST.md](CHROME_WEB_STORE_CHECKLIST.md).
 
 The extension is completely free. There is no account, subscription, purchase, license key, upgrade, or paid tier, and no payment code.
 
@@ -107,7 +107,7 @@ Then visit `http://127.0.0.1:8765/fixtures/`. The pages use fake labels only: lo
 - Masking is visual only and is not applied to text areas, drop-downs, or custom controls. Screen readers still read the real characters.
 - On server-rendered React sites that hydrate late, inserting a note before hydration makes React re-render that part of the page once. Forms keep working. See [SECURITY_AUDIT.md](SECURITY_AUDIT.md).
 - After an extension update, tabs that were already open keep the old content script until they reload.
-- No store listing has been submitted.
+- The store listing is pending Google's review, so the extension cannot be installed from the Chrome Web Store yet.
 
 ## Project layout
 

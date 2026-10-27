@@ -1,6 +1,6 @@
 # Chrome Web Store detailed description
 
-Not submitted yet. Paste everything below the line into the dashboard's Description field. It describes version 0.1.1 as of the October 26, 2026 audit. Do not publish a sentence from this file if the code no longer does that thing. Publish it as a free item; the extension does not process payments.
+Version 0.1.1 was submitted to the Chrome Web Store on October 26, 2026 and is pending review. Everything below the line is the text prepared for the dashboard's Description field; keep this file in step with the dashboard if the listing changes. It describes version 0.1.1 as of the October 26, 2026 audit. Do not publish a sentence from this file if the code no longer does that thing. Publish it as a free item; the extension does not process payments.
 
 ---
 

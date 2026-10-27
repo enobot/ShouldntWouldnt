@@ -1,7 +1,10 @@
 # Chrome Web Store checklist
 
-Version 0.1.1. Nothing has been uploaded, submitted, or reviewed by Google. This file replaces
-`store/submission-checklist.md` as the working list; that file now points here.
+Version 0.1.1 was submitted to the Chrome Web Store on October 26, 2026 and is pending Google's
+compliance review. Google has not approved or published it yet. On submission the dashboard warned that
+broad host permissions may need an in-depth review, which can take longer; the permissions were kept on
+purpose (see "Permission justifications"). This file replaces `store/submission-checklist.md` as the
+working list; that file now points here.
 
 Policy sources checked on October 26, 2026:
 
@@ -23,17 +26,18 @@ Policy sources checked on October 26, 2026:
 
 | Area | Status |
 | --- | --- |
+| Submission | **Submitted** October 26, 2026 by the account owner; pending review |
 | Manifest V3, permissions, CSP, no remote code | **Done** (verified by tests) |
 | Working popup, reliable reminders, masking | **Done** in Chromium automation; still needs a person to click through `store/manual-tests.md` in branded Chrome |
 | Release ZIP | **Done**: `npm run build && npm run package` writes `release/shouldnt-wouldnt-0.1.1.zip` (16 files: the manifest, popup, styles, icons, the bundled content script, and only the modules the service worker and popup import; no tests, no TypeScript, no source maps); `tests/browser/release.test.mjs` unzips it, loads it, and checks that a reminder appears, the popup renders, and the packaged worker saves the switch |
-| Privacy policy matches the code | **Done in draft** (`store/privacy-policy.md`, updated for masking, the badge, and the store's data disclosure) |
+| Privacy policy matches the code | **Done** (`store/privacy-policy.md`, updated for masking, the badge, and the store's data disclosure) |
 | Privacy policy at a public HTTPS URL | **Done**: https://github.com/enobot/ShouldntWouldnt/blob/main/store/privacy-policy.md (pushed October 26, 2026) |
 | Support email works | **Blocker until checked**: `support@shouldntwouldnt.com` is used consistently. The domain has mail (MX) records pointing to Google, so an inbox may exist; delivery was not tested |
 | Screenshots | **Done**: five 1280×800 PNGs in `store/assets/` (`npm run store-assets`) |
 | Small promo tile | **Done**: `store/assets/small-promo-tile.png`, 440×280 |
 | Store icon | Acceptable: `icons/icon128.png`, 128×128 PNG. It is a plain generated mark drawn edge to edge, not the 96×96-with-padding layout Google suggests. A designed icon is recommended, not required |
-| Data-use disclosures | **Ready to enter**: see "Privacy practices tab" below |
-| Developer account, 2-Step Verification, trader declaration | **Manual**: needs the account owner |
+| Data-use disclosures | **Entered** by the account owner at submission; the prepared answers are under "Privacy practices tab" below |
+| Developer account, 2-Step Verification, trader declaration | **Done** by the account owner |
 | Product decision on email/phone reminders | **Open** (see below) |
 
 ## Completed requirements
@@ -150,17 +154,24 @@ in the dashboard.
 > password or card number field. A short note appears under the field. Click the toolbar button to see
 > the popup summary and the on/off switch. The extension makes no network requests.
 
-## Final submission blockers
+## Submission
 
-1. Put the privacy policy URL above in the dashboard.
-2. Confirm `support@shouldntwouldnt.com` receives mail.
-3. A person loads the release ZIP in branded Chrome and runs `store/manual-tests.md`, including the
-   real toolbar popup, a screen reader pass, and Chrome's own autofill on `fixtures/masking.html`.
-4. Account owner completes developer registration (one-time fee), 2-Step Verification, the publisher
-   name and contact email, and the trader/non-trader declaration. (No legal conclusion is made here about
-   trader status.)
-5. Decide the open product question below.
-6. Upload `release/shouldnt-wouldnt-0.1.1.zip`, fill in the three tabs above, and submit for review.
+Submitted for review on October 26, 2026 by the account owner. Dashboard status: Pending Review.
+
+- [x] Developer registration (one-time fee), 2-Step Verification, publisher name and contact email, and
+      the trader/non-trader declaration. (No legal conclusion is made here about trader status.)
+- [x] Privacy policy URL entered.
+- [x] `release/shouldnt-wouldnt-0.1.1.zip` uploaded, the three tabs filled in, and submitted.
+
+Still open (not recorded as done):
+
+- [ ] Confirm `support@shouldntwouldnt.com` receives mail.
+- [ ] A person loads the release ZIP in branded Chrome and runs `store/manual-tests.md`, including the
+      real toolbar popup, a screen reader pass, and Chrome's own autofill on `fixtures/masking.html`.
+- [ ] Decide the open product question below.
+
+If the review rejects the item, Google's email names the policy it applied. Fix that, then rebuild and
+package, and upload the new ZIP from the dashboard.
 
 ## Open product decision
 
