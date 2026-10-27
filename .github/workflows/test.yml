@@ -1,0 +1,55 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Typecheck, unit tests, build, package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Unit tests
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee unit-tests.log
+      - run: npm run build
+      - run: npm run package
+      - name: Show failing tests
+        if: failure()
+        run: grep -E "✖|Error" unit-tests.log | head -40 | sed 's/^/::error::/' || true
+
+  browser:
+    name: Real-browser tests (Playwright Chromium)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run package
+      - name: Install Chromium
+        run: |
+          npm run browsers
+          npx playwright install-deps chromium
+      - name: Browser tests
+        run: |
+          set -o pipefail
+          npm run test:browser 2>&1 | tee browser-tests.log
+      - name: Show failing tests
+        if: failure()
+        run: grep -E "✖|Error" browser-tests.log | head -40 | sed 's/^/::error::/' || true
