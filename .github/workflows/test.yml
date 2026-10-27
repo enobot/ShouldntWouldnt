@@ -29,7 +29,7 @@ jobs:
       - run: npm run package
       - name: Show failing tests
         if: failure()
-        run: grep -E "✖|Error" unit-tests.log | head -40 | sed 's/^/::error::/' || true
+        run: node scripts/ci-failures.mjs unit-tests.log "Failing unit tests"
 
   browser:
     name: Real-browser tests (Playwright Chromium)
@@ -54,4 +54,4 @@ jobs:
           npm run test:browser 2>&1 | tee browser-tests.log
       - name: Show failing tests
         if: failure()
-        run: grep -E "✖|Error" browser-tests.log | head -40 | sed 's/^/::error::/' || true
+        run: node scripts/ci-failures.mjs browser-tests.log "Failing browser tests"

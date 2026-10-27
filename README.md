@@ -191,16 +191,16 @@ python3 -m http.server 8765 --bind 127.0.0.1
 | `npm run package` | Builds `release/shouldnt-wouldnt-<version>.zip` and refuses to include tests, TypeScript sources, or source maps |
 | `npm run bench` | Page benchmark against a no-extension baseline ([PERFORMANCE_AUDIT.md](PERFORMANCE_AUDIT.md)) |
 
-**Latest local run**, October 26, 2026, on a clean clone of commit `3119545` (version 0.1.3), Windows 10, Node.js 25.8.0,
+**Latest local run**, October 26, 2026, on a clean clone of commit `cd9b6f3` (version 0.2.0), Windows 10, Node.js 25.8.0,
 Playwright 1.64.1 (Chromium 156):
 
 | Check | Result |
 | --- | --- |
 | `npm ci` | 0 vulnerabilities reported |
-| `npm test` | 41 of 41 tests passed (14 suites) |
-| `npm run build`, `npm run package` | Succeeded; package of 16 files |
-| `npm run test:browser` | 35 of 35 tests passed (8 suites) |
-| `npm run accuracy` | Tuning set 154 of 154 scored cases correct; held-out set 43 of 43 |
+| `npm test` | 50 of 50 tests passed (16 suites) |
+| `npm run build`, `npm run package` | Succeeded; package of 31 files |
+| `npm run test:browser` | 38 of 38 tests passed (9 suites) |
+| `npm run accuracy` | Tuning set 196 of 196 scored cases correct (42 in other languages); held-out set 43 of 43 |
 
 **CI:** GitHub Actions runs [.github/workflows/test.yml](.github/workflows/test.yml) on every push and
 pull request to `main`, on Ubuntu with Node.js 22. Its first five runs, on October 26, 2026, all passed
@@ -215,7 +215,8 @@ What these results do not show:
 
 - The accuracy cases were written by the same person who wrote the rules, and the held-out set was
   adjusted after its first measurement (41 of 43). The 13 cases for maiden names, security answers, and
-  license plates were written together with those rules in 0.1.3. They are not real-web error rates.
+  license plates were written together with those rules in 0.1.3, and the 42 cases in other languages
+  with the 0.2.0 phrase lists. They are not real-web error rates.
   [DETECTION_ACCURACY.md](DETECTION_ACCURACY.md) explains the method and its limits.
 - No screen reader was run. Accessibility is checked through Chrome's accessibility tree and keyboard
   input.
