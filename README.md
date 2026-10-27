@@ -177,30 +177,31 @@ python3 -m http.server 8765 --bind 127.0.0.1
 | `npm run package` | Builds `release/shouldnt-wouldnt-<version>.zip` and refuses to include tests, TypeScript sources, or source maps |
 | `npm run bench` | Page benchmark against a no-extension baseline ([PERFORMANCE_AUDIT.md](PERFORMANCE_AUDIT.md)) |
 
-**Latest local run**, October 26, 2026, on a clean clone of commit `4ce3042` (version 0.1.2), Windows 10, Node.js 25.8.0,
+**Latest local run**, October 26, 2026, on a clean clone of commit `3119545` (version 0.1.3), Windows 10, Node.js 25.8.0,
 Playwright 1.64.1 (Chromium 156):
 
 | Check | Result |
 | --- | --- |
 | `npm ci` | 0 vulnerabilities reported |
-| `npm test` | 38 of 38 tests passed (14 suites) |
+| `npm test` | 41 of 41 tests passed (14 suites) |
 | `npm run build`, `npm run package` | Succeeded; package of 16 files |
-| `npm run test:browser` | 32 of 32 tests passed (8 suites) |
-| `npm run accuracy` | Tuning set 141 of 141 scored cases correct; held-out set 43 of 43 |
+| `npm run test:browser` | 35 of 35 tests passed (8 suites) |
+| `npm run accuracy` | Tuning set 154 of 154 scored cases correct; held-out set 43 of 43 |
 
 **CI:** GitHub Actions runs [.github/workflows/test.yml](.github/workflows/test.yml) on every push and
-pull request to `main`, on Ubuntu with Node.js 22. Its first three runs, on October 26, 2026, all passed
+pull request to `main`, on Ubuntu with Node.js 22. Its first five runs, on October 26, 2026, all passed
 both jobs (typecheck, unit tests, build, and package; and the real-browser tests in Playwright's
-Chromium), including [run 40437956242](https://github.com/enobot/ShouldntWouldnt/actions/runs/40437956242)
-on commit `4ce3042` (version 0.1.2). The browser tests took about 30 seconds each time; installing
+Chromium), including [run 40441430099](https://github.com/enobot/ShouldntWouldnt/actions/runs/40441430099)
+on commit `3119545` (version 0.1.3). The browser tests took 30 to 40 seconds each time; installing
 Chromium and its system packages took from under a minute to about seven, so each job has a time limit.
-Three runs are not enough to know how often the browser tests flake on a hosted runner. The badge at the
+Five runs are not enough to know how often the browser tests flake on a hosted runner. The badge at the
 top shows the latest run.
 
 What these results do not show:
 
 - The accuracy cases were written by the same person who wrote the rules, and the held-out set was
-  adjusted after its first measurement (41 of 43). They are not real-web error rates.
+  adjusted after its first measurement (41 of 43). The 13 cases for maiden names, security answers, and
+  license plates were written together with those rules in 0.1.3. They are not real-web error rates.
   [DETECTION_ACCURACY.md](DETECTION_ACCURACY.md) explains the method and its limits.
 - No screen reader was run. Accessibility is checked through Chrome's accessibility tree and keyboard
   input.
