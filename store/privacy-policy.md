@@ -19,7 +19,7 @@ Form analysis happens locally in your browser. To decide whether to show a remin
 - the label and other short descriptive text next to the field (text inside form controls, drop-down
   options, and editable areas such as rich-text boxes is skipped)
 - the page's hostname and whether the address starts with `http` or `https`
-- the `action` attribute of a form that already contains a field the extension has warned about
+- the `action` attribute of the form around a field that looks sensitive (to notice a form that would send over an insecure connection)
 
 It uses those details to recognize requests for information such as a Social Security number, payment card, bank account, password, government ID, license plate, maiden name, security-question answer, email address, phone number, street address, or date of birth. It also looks locally for an insecure connection and for a hostname that is a close lookalike of a well-known name. Many deceptive names are missed on purpose. The extension does not ask a reputation service whether a site is safe.
 

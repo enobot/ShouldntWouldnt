@@ -107,8 +107,8 @@ merchant lookups would likely be judged as additional purposes; see
 - **Host permissions (`http://*/*`, `https://*/*`):** The reminder must appear beside a form while it is
   on screen, on whatever site the person visits, without the person first clicking the toolbar button.
   The content script reads only field metadata (control type, name, id, autocomplete hint, placeholder,
-  label text, and nearby description), the page hostname and scheme, and the `action` of a form that
-  contains a warned field. It never reads what the person types and sends nothing anywhere.
+  label text, and nearby description), the page hostname and scheme, and the `action` of the form around
+  a field that looks sensitive. It never reads what the person types and sends nothing anywhere.
 - **`storage`:** Remembers one setting in this browser profile: whether protection is on or off.
 
 ### Remote code
