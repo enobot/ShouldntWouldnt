@@ -91,7 +91,7 @@ describe("privacy source scan", () => {
     }
   });
 
-  test("chrome.storage keeps only the local on/off setting, and only the worker writes it", () => {
+  test("chrome.storage keeps only the on/off setting and the language choice, and only the worker writes them", () => {
     const allowed = new Set(["src/background/service-worker.ts", "src/content/controller.ts"]);
     for (const path of sources()) {
       const text = readFileSync(path, "utf8");
@@ -103,12 +103,13 @@ describe("privacy source scan", () => {
     }
     const worker = readFileSync(join(root, "src/background/service-worker.ts"), "utf8");
     const controller = readFileSync(join(root, "src/content/controller.ts"), "utf8");
-    assert.match(worker, /chrome\.storage\.local\.get\(PROTECTION_STORAGE_KEY/);
-    assert.match(worker, /chrome\.storage\.local\.set\(\{ \[PROTECTION_STORAGE_KEY\]: next \}/);
+    // One write in the whole extension, and its key can only be one of the two setting names.
     assert.equal((worker.match(/chrome\.storage\.local\.set/g) ?? []).length, 1);
+    assert.match(worker, /chrome\.storage\.local\.set\(\{ \[key\]: value \}/);
+    assert.match(worker, /key: typeof PROTECTION_STORAGE_KEY \| typeof LANGUAGE_STORAGE_KEY, value: boolean \| LanguageChoice/);
     assert.equal(/chrome\.storage\.local\.set/.test(controller), false);
     assert.equal((controller.match(/chrome\.storage\.local\.get\(/g) ?? []).length, 1);
-    assert.match(controller, /chrome\.storage\.local\.get\(PROTECTION_STORAGE_KEY/);
+    assert.match(controller, /chrome\.storage\.local\.get\(\[PROTECTION_STORAGE_KEY, LANGUAGE_STORAGE_KEY\]/);
     assert.match(controller, /chrome\.storage\.onChanged\.addListener/);
   });
 

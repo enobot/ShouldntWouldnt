@@ -36,14 +36,19 @@ function modulesFrom(entry, found) {
   }
 }
 
-const popupScripts = [...readFileSync(join(root, "popup.html"), "utf8").matchAll(/<script[^>]*\bsrc="([^"]+)"/g)].map((match) => match[1]);
+// The extension pages: the toolbar popup, and the welcome page that asks for a language after install.
+const PAGES = ["popup.html", "welcome.html"];
+const pageScripts = PAGES.flatMap((page) =>
+  [...readFileSync(join(root, page), "utf8").matchAll(/<script[^>]*\bsrc="([^"]+)"/g)].map((match) => match[1]),
+);
 const modules = new Set();
-for (const entry of [manifest.background.service_worker, ...popupScripts]) modulesFrom(entry, modules);
+for (const entry of [manifest.background.service_worker, ...pageScripts]) modulesFrom(entry, modules);
 
 const files = [
   "manifest.json",
-  "popup.html",
+  ...PAGES,
   "popup.css",
+  "welcome.css",
   "content.css",
   "dist/content.js",
   ...walk(join(root, "icons")).map((path) => relative(root, path)),

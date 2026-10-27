@@ -48,6 +48,44 @@ async function noteFor(page, index = 0) {
   return notes[index];
 }
 
+async function until(check, message, timeout = 5_000) {
+  const end = Date.now() + timeout;
+  while (Date.now() < end) {
+    if (await check()) return;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  assert.fail(message);
+}
+
+/** The lang and dir of every note and site panel, read through their closed shadow roots. */
+async function noteLanguages(page) {
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    const { root } = await cdp.send("DOM.getDocument", { depth: -1, pierce: true });
+    const out = [];
+    const visit = (node) => {
+      const attrs = node.attributes ?? [];
+      const get = (name) => {
+        for (let i = 0; i < attrs.length; i += 2) if (attrs[i] === name) return attrs[i + 1];
+        return null;
+      };
+      const kind = get("class");
+      if (node.nodeName === "DIV" && (kind === "note" || kind === "panel")) out.push({ lang: get("lang"), dir: get("dir") });
+      for (const child of node.children ?? []) visit(child);
+      for (const shadow of node.shadowRoots ?? []) visit(shadow);
+    };
+    visit(root);
+    return out;
+  } finally {
+    await cdp.detach();
+  }
+}
+
+async function clearLanguage() {
+  const worker = await currentWorker(browser.ctx);
+  await worker.evaluate(() => chrome.storage.local.remove("language"));
+}
+
 function buttonNamed(note, pattern) {
   return note.buttonInfo.find((info) => pattern.test(info.name));
 }
@@ -423,6 +461,71 @@ describe("hostile pages", () => {
       return { display: s.display, visibility: s.visibility, opacity: s.opacity, height: host.getBoundingClientRect().height > 0 };
     });
     assert.deepEqual(style, { display: "block", visibility: "visible", opacity: "1", height: true });
+    await page.close();
+  });
+});
+
+describe("languages", () => {
+  test("the welcome page opens after install, asks for a language first, and saves the choice", async () => {
+    const welcome = browser.ctx.pages().find((page) => page.url().endsWith("/welcome.html"));
+    assert.ok(welcome, "the welcome page opened when the extension was installed");
+    try {
+      await welcome.locator("button[lang=vi]").click();
+      await welcome.waitForSelector("#welcome-done");
+      assert.equal(await welcome.evaluate(() => document.activeElement?.id), "welcome-done", "focus moves to the confirmation");
+      assert.equal(await welcome.evaluate(() => document.documentElement.lang), "vi");
+      assert.match(await welcome.textContent("#welcome-done"), /tiếng Việt/);
+      assert.equal(await welcome.getAttribute("button[lang=vi]", "aria-pressed"), "true");
+      const worker = await currentWorker(browser.ctx);
+      assert.deepEqual(await worker.evaluate(() => chrome.storage.local.get("language")), { language: "vi" });
+    } finally {
+      await clearLanguage();
+      await welcome.close();
+    }
+  });
+
+  test("notes, their buttons, and the popup follow the chosen language; the page is not translated", async () => {
+    const page = await open("https://shop.test/fixtures/ssn.html");
+    await page.waitForSelector("[data-shouldnt-wouldnt=marked]");
+    const pageText = await page.textContent("h1");
+    const popup = await browser.ctx.newPage();
+    await popup.goto(popupUrl(browser.extensionId));
+    try {
+      await popup.locator("#language-button").click();
+      assert.equal(await popup.getAttribute("#language-button", "aria-expanded"), "true");
+      await popup.locator("#language-list button[lang=es]").click();
+      await popup.waitForFunction(() => document.documentElement.lang === "es");
+      assert.match(await popup.textContent("#protection-toggle"), /Protección/);
+      assert.equal(await popup.evaluate(() => document.activeElement?.id), "language-button", "focus returns to the language button");
+      await until(async () => (await noteFor(page, 0))?.texts.some((text) => /Seguro Social/.test(text)), "the note turns Spanish");
+      const names = (await noteFor(page, 0)).buttonInfo.filter((info) => info.box).map((info) => info.name);
+      assert.deepEqual(names, ["Mostrar lo que escribió en este campo", "¿Por qué veo esto?", "Cerrar este recordatorio"]);
+      assert.deepEqual(await noteLanguages(page), [{ lang: "es", dir: "ltr" }]);
+      assert.match((await accessibleInfo(page, "#ssn")).description, /Seguro Social/);
+      assert.equal(await page.textContent("h1"), pageText, "the page's own words are untouched");
+
+      await popup.locator("#language-button").click();
+      await popup.locator("#language-list button[lang=ar]").click();
+      await popup.waitForFunction(() => document.documentElement.dir === "rtl");
+      await until(async () => JSON.stringify(await noteLanguages(page)) === JSON.stringify([{ lang: "ar", dir: "rtl" }]), "the note turns Arabic, right to left");
+
+      await popup.locator("#language-button").click();
+      await popup.locator("#language-list button:not([lang])").click();
+      await popup.waitForFunction(() => document.documentElement.lang === "en");
+      await until(async () => (await noteFor(page, 0))?.texts.some((text) => /Social Security number/.test(text)), "back to the browser's language");
+    } finally {
+      await clearLanguage();
+      await Promise.all([page.close(), popup.close()]);
+    }
+  });
+
+  test("forms written in other languages get notes, in the language the person chose", async () => {
+    const page = await open("https://shop.test/fixtures/other-languages.html");
+    await page.waitForSelector("#ar-dob[data-shouldnt-wouldnt=marked]");
+    await page.waitForTimeout(300);
+    for (const id of ["es-ssn", "zh-card", "ko-card", "vi-bank", "ru-maiden", "ar-dob"]) assert.equal(await marked(page, `#${id}`), true, id);
+    for (const id of ["es-comments", "zh-otp"]) assert.equal(await marked(page, `#${id}`), false, id);
+    assert.match((await noteFor(page, 0)).texts.join(" "), /Social Security number/, "the note is in the chosen (here: browser) language, not the page's");
     await page.close();
   });
 });

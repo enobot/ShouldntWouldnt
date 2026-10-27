@@ -1,6 +1,6 @@
 # Privacy policy
 
-Shouldn't Wouldn't, versions 0.1.1 to 0.1.3. This policy describes what these versions of the extension actually do. It is the notice to publish with the Chrome Web Store listing. It is not a law firm's opinion, and it does not change what a website does with information a person chooses to submit.
+Shouldn't Wouldn't, versions 0.1.1 to 0.2.0. This policy describes what these versions of the extension actually do. It is the notice to publish with the Chrome Web Store listing. It is not a law firm's opinion, and it does not change what a website does with information a person chooses to submit.
 
 Contact: support@shouldntwouldnt.com
 
@@ -27,6 +27,10 @@ The toolbar popup shows the hostname, the connection scheme, two counts, and a s
 
 The Chrome Web Store asks developers to declare data an extension handles even when it never leaves the device. For this extension, that is website content: the field details and page address listed above, examined on your computer to decide whether to show a reminder. They are not stored, not sent to the developer or anyone else, not sold, and not used for any other purpose.
 
+## Language
+
+Since version 0.2.0, the extension shows its own reminders, buttons, and popup in a language you choose: English, Spanish, Chinese (Simplified or Traditional), Vietnamese, Tagalog, Korean, Arabic, French, Russian, Portuguese, or Haitian Creole. Right after you install it, a page opens and asks which one. If you do not choose, it follows your browser's language setting, which it reads on your computer. The page you are visiting is never translated or changed. The extension also recognizes form labels written in those languages, in the same local way described above.
+
 ## Hiding characters on screen
 
 For fields that appear to ask for a Social Security number, card number, bank account or routing number, government ID, passport, or driver's license, the extension draws the characters you type as dots, using a browser display setting on that field. A Show button in the reminder reveals them, and Hide covers them again. This changes only what your screen shows. The extension does not read, copy, or store what you type to do this, and the website still receives exactly what you enter.
@@ -37,9 +41,9 @@ If a page keeps removing a reminder, or covers one, the extension marks its tool
 
 ## What is saved
 
-The extension saves one setting in Chrome's local extension storage (`chrome.storage.local`): whether protection is on or off. The stored value is only `true` or `false`, under the key `protectionEnabled`.
+The extension saves at most two settings in Chrome's local extension storage (`chrome.storage.local`): whether protection is on or off (only `true` or `false`, under the key `protectionEnabled`), and, from version 0.2.0, the language you chose for its reminders (a language code such as `es`, or `auto` to follow the browser, under the key `language`).
 
-That choice stays in this browser profile when you move between websites, refresh a page, close Chrome, or when Chrome restarts the extension's background script. It is not sent to Shouldn't Wouldn't, and this extension does not use Chrome's sync storage. Removing the extension deletes the setting. The setting is not encrypted by the extension. It is not a password, a card number, or anything typed into a form.
+These choices stay in this browser profile when you move between websites, refresh a page, close Chrome, or when Chrome restarts the extension's background script. They are not sent to Shouldn't Wouldn't, and this extension does not use Chrome's sync storage. Removing the extension deletes them. The settings are not encrypted by the extension. They are not a password, a card number, or anything typed into a form.
 
 Until you dismiss it, a reminder stays on the page. A dismissal lasts until that page closes. It is kept in memory only.
 
@@ -57,7 +61,7 @@ It does not send browsing history, page addresses, form fields, or typed input t
 
 The reminder has to appear beside a form while that form is on the screen. The extension therefore runs on ordinary `http` and `https` pages. Chrome describes that access broadly, because a content script is allowed to see the page. In this extension, that access is used to read the field metadata listed above and to insert the reminder. It is not used to read what you type or to change what you submit.
 
-The `storage` permission is used only to remember the on/off setting described above.
+The `storage` permission is used only to remember the on/off setting and the language choice described above.
 
 Chrome still lets a person limit which sites an extension may visit.
 
@@ -73,10 +77,10 @@ The extension is a reminder for adults, including parents. It is not a children'
 
 ## How long information stays
 
-- The on/off setting remains until you change it or remove the extension.
+- The on/off setting and the language choice remain until you change them or remove the extension.
 - A dismissed reminder, a Show or Hide choice, and the stronger site note are discarded when the page closes.
 - The toolbar "!" mark is cleared when the page that hid a reminder goes away, or when the tab closes.
-- Nothing is sent to the developer, so there is no developer copy to delete. To delete the saved setting, turn protection on again or remove the extension in `chrome://extensions`.
+- Nothing is sent to the developer, so there is no developer copy to delete. To delete the saved settings, remove the extension in `chrome://extensions`.
 
 ## Chrome Web Store limited use
 

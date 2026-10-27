@@ -1,3 +1,5 @@
+import { isLanguageChoice, type LanguageChoice } from "./i18n/strings.js";
+
 export interface GetEnabledMessage {
   type: "sw/getEnabled";
 }
@@ -12,6 +14,16 @@ export interface EnabledChangedMessage {
   enabled: boolean;
 }
 
+export interface GetLanguageMessage {
+  type: "sw/getLanguage";
+}
+
+/** From the popup or the welcome page: show the notes in this language ("auto" follows the browser). */
+export interface SetLanguageMessage {
+  type: "sw/setLanguage";
+  language: LanguageChoice;
+}
+
 export interface GetSummaryMessage {
   type: "page/getSummary";
 }
@@ -24,6 +36,8 @@ export interface ReminderHiddenMessage {
 export type IncomingMessage =
   | GetEnabledMessage
   | SetEnabledMessage
+  | GetLanguageMessage
+  | SetLanguageMessage
   | EnabledChangedMessage
   | GetSummaryMessage
   | ReminderHiddenMessage;
@@ -32,6 +46,12 @@ export interface EnabledState {
   ok: true;
   type: "sw/enabledState";
   enabled: boolean;
+}
+
+export interface LanguageState {
+  ok: true;
+  type: "sw/languageState";
+  language: LanguageChoice;
 }
 
 export interface PageSummary {
@@ -72,7 +92,7 @@ export function parseIncoming(message: unknown): IncomingMessage | null {
   const record = plainObject(message);
   if (!record || hasForbiddenKey(record)) return null;
   const type = record.type;
-  if (type === "sw/getEnabled" || type === "page/getSummary" || type === "page/reminderHidden" || type === "page/left") {
+  if (type === "sw/getEnabled" || type === "sw/getLanguage" || type === "page/getSummary" || type === "page/reminderHidden" || type === "page/left") {
     if (Object.keys(record).length !== 1) return null;
     return { type };
   }
@@ -80,7 +100,19 @@ export function parseIncoming(message: unknown): IncomingMessage | null {
     if (Object.keys(record).length !== 2 || typeof record.enabled !== "boolean") return null;
     return { type, enabled: record.enabled };
   }
+  if (type === "sw/setLanguage") {
+    if (Object.keys(record).length !== 2 || !isLanguageChoice(record.language)) return null;
+    return { type, language: record.language };
+  }
   return null;
+}
+
+export function parseLanguageState(message: unknown): LanguageState | null {
+  const record = plainObject(message);
+  if (!record || hasForbiddenKey(record)) return null;
+  if (record.ok !== true || record.type !== "sw/languageState" || !isLanguageChoice(record.language)) return null;
+  if (Object.keys(record).length !== 3) return null;
+  return { ok: true, type: "sw/languageState", language: record.language };
 }
 
 export function parseEnabledState(message: unknown): EnabledState | null {

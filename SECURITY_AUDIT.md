@@ -103,7 +103,7 @@ Show/Hide eye button. It never reads the value and never changes the field type.
 | On/off switch may reset after service-worker shutdown | **Not reproduced.** The original code already stored the boolean in `chrome.storage.local` and kept no in-memory copy. The new build passes a test that stops the worker, reloads pages, opens a new tab, toggles five times, and fully restarts the browser on the same profile. |
 | Privacy policy and terms need final review | Reviewed and updated for masking, the badge, and the storage read. The policy is public on GitHub; both still need a person's sign-off. |
 | Store publishing assets incomplete | Screenshots and the small promo tile are now in `store/assets/`, and the policy is public on GitHub. See the store checklist. |
-| "24/24 tests passing", "npm audit 0" | At the start: 21 tests, all passing; `npm audit`: 0. Now (0.1.3): 41 unit tests, 35 browser tests (6 privacy, 26 behavior, 3 release), `npm audit`: 0. |
+| "24/24 tests passing", "npm audit 0" | At the start: 21 tests, all passing; `npm audit`: 0. Now (0.2.0): 50 unit tests, 38 browser tests (6 privacy, 29 behavior, 3 release), `npm audit`: 0. 0.2.0 stores a second setting, the language choice; the source scan allows exactly the two keys and one write. |
 
 ## Manifest and permission review
 

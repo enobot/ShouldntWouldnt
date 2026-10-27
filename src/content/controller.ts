@@ -1,16 +1,8 @@
-import {
-  concernLines,
-  fieldCopy,
-  fieldDescription,
-  HIDE_LABEL,
-  HIDE_NAME,
-  moreInformation,
-  SHOW_LABEL,
-  SHOW_NAME,
-  whyText,
-} from "../shared/copy.js";
+import { concernLines, fieldCopy, fieldDescription, moreInformation, whyText } from "../shared/copy.js";
 import { responseToWarning, shouldOfferStrongWarning, shouldPauseSubmit } from "../shared/decisions.js";
 import { classifyField, needsSiteConcern } from "../shared/detect.js";
+import { stringsFor } from "../shared/i18n/index.js";
+import { LANGUAGE_STORAGE_KEY, languageInfo, resolveLanguage, type LanguageInfo, type UiStrings } from "../shared/i18n/strings.js";
 import { FieldBook } from "../shared/ledger.js";
 import { shouldMask } from "../shared/masking.js";
 import { parseIncoming } from "../shared/messages.js";
@@ -21,13 +13,22 @@ import { statusFor } from "../shared/status.js";
 import type { PageSummary } from "../shared/messages.js";
 import type { ConcernKind, WarnCategory } from "../shared/types.js";
 import { extractField, isFieldElement, withLabelIndex } from "./metadata.js";
-import { hostMutationIsOurs, mountPanel, mountWarning, paintHost, setRevealState, type WarningNodes } from "./warning-view.js";
+import {
+  hostMutationIsOurs,
+  labelPanel,
+  labelWarning,
+  mountPanel,
+  mountWarning,
+  paintHost,
+  setRevealState,
+  type PanelNodes,
+  type WarningNodes,
+} from "./warning-view.js";
 
 const MARK = "data-shouldnt-wouldnt";
 const MASK = "data-shouldnt-wouldnt-mask";
 const MARK_SHADOW = "inset 0 0 0 1px #9f1239, 0 0 0 1px #9f1239";
 const TEXT_SECURITY = "-webkit-text-security";
-const REVEAL_LABELS = { show: SHOW_LABEL, hide: HIDE_LABEL, showName: SHOW_NAME, hideName: HIDE_NAME };
 const FLOW_DISPLAYS = new Set(["block", "flow-root", "list-item", "table-cell"]);
 const OBSERVE: MutationObserverInit = {
   childList: true,
@@ -89,6 +90,11 @@ let panelHost: HTMLElement | null = null;
 let panelNode: HTMLDivElement | null = null;
 let panelLines: HTMLDivElement | null = null;
 let panelMore: HTMLParagraphElement | null = null;
+let panelNodes: PanelNodes | null = null;
+let panelConcerns: ConcernKind[] = [];
+// The language of the extension's own notes. The page itself is never translated.
+let language: LanguageInfo = languageInfo("en");
+let strings: UiStrings = stringsFor("en");
 let panelAfter: Element | null = null;
 let panelRepairs: RepairBudget = freshRepairBudget();
 let panelWatcher: MutationObserver | null = null;
@@ -111,17 +117,54 @@ function send(message: unknown): void {
   }
 }
 
-function readEnabled(): Promise<boolean> {
+interface Settings {
+  enabled: boolean;
+  language: unknown;
+}
+
+/** The two saved settings: whether protection is on, and the language for the notes. */
+function readSettings(): Promise<Settings> {
   return new Promise((resolve) => {
     try {
-      chrome.storage.local.get(PROTECTION_STORAGE_KEY, (items) => {
+      chrome.storage.local.get([PROTECTION_STORAGE_KEY, LANGUAGE_STORAGE_KEY], (items) => {
         void chrome.runtime.lastError;
-        resolve(protectionFromStored(items?.[PROTECTION_STORAGE_KEY]));
+        resolve({ enabled: protectionFromStored(items?.[PROTECTION_STORAGE_KEY]), language: items?.[LANGUAGE_STORAGE_KEY] });
       });
     } catch {
-      resolve(protectionFromStored(undefined));
+      resolve({ enabled: protectionFromStored(undefined), language: undefined });
     }
   });
+}
+
+function browserLanguage(): string {
+  try {
+    return chrome.i18n?.getUILanguage() ?? navigator.language;
+  } catch {
+    return navigator.language;
+  }
+}
+
+function revealLabels(): { show: string; hide: string; showName: string; hideName: string } {
+  return { show: strings.show, hide: strings.hide, showName: strings.showName, hideName: strings.hideName };
+}
+
+/** Puts every note and the site panel into the chosen language. Only the extension's own words change. */
+function applyLanguage(stored: unknown): void {
+  const code = resolveLanguage(stored, browserLanguage());
+  if (code === language.code) return;
+  language = languageInfo(code);
+  strings = stringsFor(code);
+  concernCache = null;
+  for (const [field, view] of views) {
+    labelWarning(view, strings, language);
+    view.shownReveal = null;
+    refreshView(field, view);
+  }
+  if (panelNodes) {
+    labelPanel(panelNodes, strings, language);
+    fillPanel(panelConcerns);
+  }
+  concernCache = null;
 }
 
 function schemeOf(protocol: string): "http" | "https" | "other" {
@@ -384,13 +427,13 @@ function setText(node: HTMLElement, text: string): void {
 function refreshView(field: HTMLElement, view: FieldView): void {
   const concerns = concernsNow();
   const masked = view.maskable && !view.revealed;
-  setText(view.message, fieldCopy(view.category));
-  setText(view.why, whyText(view.category, concerns, view.maskable));
-  markField(field, fieldDescription(view.category, concerns));
+  setText(view.message, fieldCopy(view.category, strings));
+  setText(view.why, whyText(view.category, concerns, view.maskable, strings));
+  markField(field, fieldDescription(view.category, concerns, strings));
   applyMask(field, masked);
   if (view.revealButton.hidden === view.maskable) view.revealButton.hidden = !view.maskable;
   if (view.maskable && view.shownReveal !== view.revealed) {
-    setRevealState(view.revealButton, view.revealed, REVEAL_LABELS);
+    setRevealState(view.revealButton, view.revealed, revealLabels());
     view.shownReveal = view.revealed;
   }
 }
@@ -403,7 +446,7 @@ function showFieldWarning(field: Field, category: WarnCategory, anchor: Element)
     paintHost(host);
     ours.add(host);
     const shadow = host.attachShadow({ mode: "closed" });
-    const nodes = mountWarning(shadow, fieldCopy(category), whyText(category, concernsNow(), maskable));
+    const nodes = mountWarning(shadow, fieldCopy(category, strings), whyText(category, concernsNow(), maskable, strings), strings, language);
     const created: FieldView = {
       host,
       anchor,
@@ -451,7 +494,19 @@ function hidePanel(): void {
   panelNode = null;
   panelLines = null;
   panelMore = null;
+  panelNodes = null;
   panelAfter = null;
+}
+
+function fillPanel(concerns: ConcernKind[]): void {
+  if (!panelNodes) return;
+  panelNodes.linesHost.replaceChildren();
+  for (const line of concernLines(concerns, strings)) {
+    const paragraph = document.createElement("p");
+    paragraph.textContent = line;
+    panelNodes.linesHost.append(paragraph);
+  }
+  panelNodes.more.textContent = moreInformation(concerns, strings);
 }
 
 /** The panel goes right after the warned field's note, so it shows up where the person is looking. */
@@ -469,19 +524,28 @@ function panelMisplaced(): boolean {
 
 function showPanel(concerns: ConcernKind[], near: HTMLElement): void {
   if (concerns.length === 0) return;
-  const lines = concernLines(concerns);
-  const more = moreInformation(concerns);
+  panelConcerns = concerns;
+  const lines = concernLines(concerns, strings);
+  const more = moreInformation(concerns, strings);
   panelAfter = panelSpot(near);
   if (!panelHost || !panelLines || !panelMore) {
     panelHost = document.createElement("div");
     paintHost(panelHost);
     ours.add(panelHost);
     const shadow = panelHost.attachShadow({ mode: "closed" });
-    const mounted = mountPanel(shadow, lines, more, {
-      goBack: () => respond("go-back"),
-      continueAnyway: () => respond("continue"),
-      more: () => undefined,
-    });
+    const mounted = mountPanel(
+      shadow,
+      lines,
+      more,
+      {
+        goBack: () => respond("go-back"),
+        continueAnyway: () => respond("continue"),
+        more: () => undefined,
+      },
+      strings,
+      language,
+    );
+    panelNodes = mounted;
     panelNode = mounted.panel;
     panelLines = mounted.linesHost;
     panelMore = mounted.more;
@@ -491,13 +555,7 @@ function showPanel(concerns: ConcernKind[], near: HTMLElement): void {
     return;
   }
   if (panelMisplaced()) restorePanel("move");
-  panelLines.replaceChildren();
-  for (const line of lines) {
-    const paragraph = document.createElement("p");
-    paragraph.textContent = line;
-    panelLines.append(paragraph);
-  }
-  panelMore.textContent = more;
+  fillPanel(concerns);
 }
 
 function respond(action: "go-back" | "continue" | "more"): void {
@@ -909,8 +967,9 @@ function listen(): void {
     }
     if (parsed.type === "page/getSummary") {
       // Read the saved choice first, so a summary asked for right after a toggle is never stale.
-      void readEnabled().then((enabled) => {
-        applyEnabled(enabled);
+      void readSettings().then((settings) => {
+        applyLanguage(settings.language);
+        applyEnabled(settings.enabled);
         sendResponse(buildSummary());
       });
       return true;
@@ -918,8 +977,11 @@ function listen(): void {
     return false;
   });
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== "local" || !Object.prototype.hasOwnProperty.call(changes, PROTECTION_STORAGE_KEY)) return;
-    applyEnabled(protectionFromStored(changes[PROTECTION_STORAGE_KEY]?.newValue));
+    if (area !== "local") return;
+    if (Object.prototype.hasOwnProperty.call(changes, LANGUAGE_STORAGE_KEY)) applyLanguage(changes[LANGUAGE_STORAGE_KEY]?.newValue);
+    if (Object.prototype.hasOwnProperty.call(changes, PROTECTION_STORAGE_KEY)) {
+      applyEnabled(protectionFromStored(changes[PROTECTION_STORAGE_KEY]?.newValue));
+    }
   });
 }
 
@@ -929,5 +991,8 @@ export function boot(): void {
   booted = true;
   marker.__shouldntWouldnt = true;
   listen();
-  void readEnabled().then(applyEnabled);
+  void readSettings().then((settings) => {
+    applyLanguage(settings.language);
+    applyEnabled(settings.enabled);
+  });
 }

@@ -112,10 +112,11 @@ describe("privacy in a real browser", () => {
     await page.close();
   });
 
-  test("extension storage holds nothing but the on/off setting", async () => {
+  test("extension storage holds nothing but the on/off setting and the language choice", async () => {
     const stored = await browser.worker.evaluate(() => chrome.storage.local.get(null));
-    for (const key of Object.keys(stored)) assert.equal(key, "protectionEnabled");
-    for (const value of Object.values(stored)) assert.equal(typeof value, "boolean");
+    for (const key of Object.keys(stored)) assert.equal(["protectionEnabled", "language"].includes(key), true, key);
+    if ("protectionEnabled" in stored) assert.equal(typeof stored.protectionEnabled, "boolean");
+    if ("language" in stored) assert.match(stored.language, /^(auto|en|es|zh-CN|zh-TW|vi|tl|ko|ar|fr|ru|pt|ht)$/);
     const session = await browser.worker.evaluate(() => chrome.storage.session.get(null));
     assert.deepEqual(session, {});
   });

@@ -7,7 +7,9 @@ purpose (see "Permission justifications"). Version 0.1.3 is packaged and waits f
 before upload. It fixes a display bug found after submission, keeps notes out of the page's own field
 boxes, stops reminders for email, password, and phone fields on ordinary HTTPS pages, and adds maiden
 names, security answers, and license plates. Its listing text in `store/listing-detailed.md` changed to
-match; paste the new text into the dashboard with the 0.1.3 upload. This file replaces `store/submission-checklist.md` as the
+match; paste the new text into the dashboard with the 0.1.3 upload. Version 0.2.0 adds a choice of 12
+languages; its translations are machine-drafted and should be reviewed by native speakers before it is
+uploaded (see [TRANSLATIONS.md](TRANSLATIONS.md), which also has the listing paragraph to add). This file replaces `store/submission-checklist.md` as the
 working list; that file now points here.
 
 Policy sources checked on October 26, 2026:
@@ -33,7 +35,7 @@ Policy sources checked on October 26, 2026:
 | Submission | **Submitted** October 26, 2026 by the account owner; pending review |
 | Manifest V3, permissions, CSP, no remote code | **Done** (verified by tests) |
 | Working popup, reliable reminders, masking | **Done** in Chromium automation; still needs a person to click through `store/manual-tests.md` in branded Chrome |
-| Release ZIP | **Done**: `npm run build && npm run package` writes `release/shouldnt-wouldnt-<version>.zip` (currently 0.1.3; 16 files: the manifest, popup, styles, icons, the bundled content script, and only the modules the service worker and popup import; no tests, no TypeScript, no source maps); `tests/browser/release.test.mjs` unzips it, loads it, and checks that a reminder appears, the popup renders, and the packaged worker saves the switch |
+| Release ZIP | **Done**: `npm run build && npm run package` writes `release/shouldnt-wouldnt-<version>.zip` (currently 0.2.0; it ships the welcome page and the language files too; the manifest, popup, styles, icons, the bundled content script, and only the modules the service worker and popup import; no tests, no TypeScript, no source maps); `tests/browser/release.test.mjs` unzips it, loads it, and checks that a reminder appears, the popup renders, and the packaged worker saves the switch |
 | Privacy policy matches the code | **Done** (`store/privacy-policy.md`, updated for masking, the badge, and the store's data disclosure) |
 | Privacy policy at a public HTTPS URL | **Done**: https://github.com/enobot/ShouldntWouldnt/blob/main/store/privacy-policy.md (pushed October 26, 2026) |
 | Support email works | **Blocker until checked**: `support@shouldntwouldnt.com` is used consistently. The domain has mail (MX) records pointing to Google, so an inbox may exist; delivery was not tested |
@@ -46,7 +48,7 @@ Policy sources checked on October 26, 2026:
 
 ## Completed requirements
 
-- [x] `manifest_version: 3`, version `0.1.3` in both `manifest.json` and `package.json` (the package
+- [x] `manifest_version: 3`, version `0.2.0` in both `manifest.json` and `package.json` (the package
       script refuses to build if they differ).
 - [x] Name "Shouldn't Wouldn't" (18 characters); manifest description 90 characters, under the 132 limit.
 - [x] Permissions: `storage` plus host access to `http://*/*` and `https://*/*`. No optional
@@ -109,7 +111,9 @@ merchant lookups would likely be judged as additional purposes; see
   The content script reads only field metadata (control type, name, id, autocomplete hint, placeholder,
   label text, and nearby description), the page hostname and scheme, and the `action` of the form around
   a field that looks sensitive. It never reads what the person types and sends nothing anywhere.
-- **`storage`:** Remembers one setting in this browser profile: whether protection is on or off.
+- **`storage`:** Remembers one setting in this browser profile: whether protection is on or off. From
+  0.2.0 on, use instead: "Remembers two settings in this browser profile: whether protection is on or
+  off, and the language the person chose for the extension's reminders."
 
 ### Remote code
 
@@ -179,6 +183,8 @@ After submission:
       toolbar popup, address autofill).
 - [ ] Upload `release/shouldnt-wouldnt-0.1.3.zip` from the dashboard once the 0.1.1 review finishes, and
       paste the updated description and test instructions.
+- [ ] Have native speakers review the 0.2.0 translations, then upload 0.2.0 with the new `storage`
+      justification and the language paragraph from [TRANSLATIONS.md](TRANSLATIONS.md).
 
 If the review rejects the item, Google's email names the policy it applied. Fix that, then rebuild and
 package, and upload the new ZIP from the dashboard.

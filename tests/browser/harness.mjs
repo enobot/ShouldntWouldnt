@@ -140,7 +140,7 @@ export function buildProbeExtension(sourceDir, label) {
   const out = join(CACHE, "probe-ext", label);
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
-  for (const name of ["manifest.json", "popup.html", "popup.css", "content.css", "icons"]) {
+  for (const name of ["manifest.json", "popup.html", "popup.css", "welcome.html", "welcome.css", "content.css", "icons"]) {
     cpSync(join(sourceDir, name), join(out, name), { recursive: true });
   }
   cpSync(join(sourceDir, "dist", "src"), join(out, "dist", "src"), { recursive: true });

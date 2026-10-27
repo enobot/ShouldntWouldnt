@@ -16,19 +16,21 @@ from a reminder to pause before sharing personal or financial information, witho
 or a verdict about the website. It is a teaching aid, not antivirus software. It never says a site is
 safe, verified, or a scam.
 
-Everything happens in the browser. The extension reads field labels, not what you type, stores one
-on/off setting, and makes no network requests.
+Everything happens in the browser. The extension reads field labels, not what you type, stores two
+settings (on/off and the language you chose), and makes no network requests.
 
 **Status:** version 0.1.1 was submitted to the Chrome Web Store on October 26, 2026 and is pending
-Google's review. It is not installable from the store yet. Version 0.1.3, in this repository, will be uploaded
-when that review finishes. It fixes a display bug found after submission (0.1.2), stops reminders for
-email, password, and phone fields on ordinary HTTPS pages, adds maiden names, security answers, and
-license plates, and keeps notes out of the page's own field boxes. The repository was first named SurfSafe;
+Google's review. It is not installable from the store yet. Version 0.1.3 will be uploaded when that review
+finishes. It fixes a display bug found after submission (0.1.2), stops reminders for email, password,
+and phone fields on ordinary HTTPS pages, adds maiden names, security answers, and license plates, and
+keeps notes out of the page's own field boxes. This repository is at 0.2.0, which adds a choice of 12
+languages; its translations are drafts that native speakers have not reviewed yet
+([TRANSLATIONS.md](TRANSLATIONS.md)). The repository was first named SurfSafe;
 GitHub redirects the old address.
 
 ## Features
 
-Implemented (version 0.1.3 in this repository; 0.1.1 is the submitted version):
+Implemented (version 0.2.0 in this repository; 0.1.1 is the submitted version):
 
 - **Field reminders.** A red outline and a note beside fields that appear to ask for a Social Security
   number, card number, card security code, bank account or routing number, government ID, passport,
@@ -42,6 +44,13 @@ Implemented (version 0.1.3 in this repository; 0.1.1 is the submitted version):
 - **Placement.** A note goes on its own line below the field, outside the field's label and outside
   any box or row the page draws around the field, so it does not squeeze the field or cover the
   buttons below it.
+- **Your language.** Right after install, a welcome page asks which language to use for the extension's
+  own words: English, Español, 简体中文, 繁體中文, Tiếng Việt, Tagalog, 한국어, العربية, Français, Русский,
+  Português, or Kreyòl ayisyen. Notes, explanations, buttons, the site warning, and the popup then
+  appear in that language, laid out right to left for Arabic, and it can be changed from the popup at
+  any time. The page being visited is never translated. Labels written in those languages are
+  recognized too, so a Spanish "Número de Seguro Social" field gets a note. The translations and the
+  label phrases are drafts that native speakers have not reviewed ([TRANSLATIONS.md](TRANSLATIONS.md)).
 - **"Why am I seeing this?"** A plain explanation of what the field seems to ask for and why it
   matters. Each note can be dismissed for that page.
 - **On-screen masking.** For Social Security, card, bank, routing, government ID, passport, and
@@ -106,12 +115,14 @@ Not implemented (proposals only, described in [FEATURE_FEASIBILITY.md](FEATURE_F
 ```
 
 - The content script never reads field values. It classifies each field from its metadata with rules
-  in [src/shared/detect.ts](src/shared/detect.ts), then inserts a note after the field's label (or
-  inside it when the label is one item of a flex or grid row).
+  in [src/shared/detect.ts](src/shared/detect.ts), then inserts a note on its own line below the field,
+  outside its label and outside any side-by-side row or fixed-size box around it.
 - Notes are built with `textContent` inside closed shadow roots, with inline `!important` host styles,
   so page scripts cannot rewrite their words and page stylesheets cannot restyle them directly.
-- The service worker is the only writer of the one saved setting, and only for a message from the
-  extension's own `popup.html`. Every message is checked against an exact shape in
+- The service worker is the only writer of the two saved settings (on/off, and the language), and
+  only for a message from the extension's own `popup.html` or, for the language, `welcome.html`. The
+  content script reads both in one storage read when a page loads and re-labels open notes when the
+  language changes. The words for each language are in [src/shared/i18n/](src/shared/i18n/). Every message is checked against an exact shape in
   [src/shared/messages.ts](src/shared/messages.ts).
 - Nothing is sent over the network by any part of the extension.
 
@@ -124,7 +135,9 @@ content.css              outline and masking styles applied to page fields
 src/content/             scanning, field metadata, placement, masking, repair, note UI
 src/background/          service worker: the on/off setting and the toolbar badge
 src/popup/               popup logic
+src/welcome/             the language page shown right after install (welcome.html, welcome.css)
 src/shared/              detection rules, masking choice, copy, site signals, message checks
+src/shared/i18n/         the extension's words, one file per language
 tests/                   unit tests and labeled accuracy cases
 tests/browser/           real-browser tests, test harness, and the privacy probe
 scripts/                 bundler, icon writer, package builder, store images, accuracy, benchmark
@@ -154,10 +167,11 @@ and writes the icons. `dist/` is not committed.
 1. Build (above), or unzip the package from `npm run package`.
 2. In Chrome, open `chrome://extensions`, turn on Developer mode, choose Load unpacked, and select the
    repository root (or the unzipped package folder).
-3. Pin Shouldn't Wouldn't from the puzzle-piece menu.
-4. Open a page with a payment form. A note appears under fields such as the card number.
+3. A welcome page opens and asks for your language. Pick one (you can change it later from the popup).
+4. Pin Shouldn't Wouldn't from the puzzle-piece menu.
+5. Open a page with a payment form. A note appears under fields such as the card number.
    (Email and password fields on an ordinary HTTPS page stay quiet.) Use Show, Why am I seeing this?, or Dismiss in the note.
-5. Click the toolbar button to see the page summary and the on/off switch.
+6. Click the toolbar button to see the page summary, the language button, and the on/off switch.
 
 To try the mock pages, serve the repository over `http` (content scripts do not run on `file://`
 pages) and open `http://127.0.0.1:8765/fixtures/`:
@@ -170,10 +184,10 @@ python3 -m http.server 8765 --bind 127.0.0.1
 
 | Command | What it covers |
 | --- | --- |
-| `npm test` | Typecheck, then unit tests: detection rules, labeled accuracy cases, note wording, masking choice, site signals, message validation, the settings rule, store text, and the privacy source scan |
+| `npm test` | Typecheck, then unit tests: detection rules, labeled accuracy cases, translations (every language complete), note wording, masking choice, site signals, message validation, the settings rule, store text, and the privacy source scan |
 | `npm run browsers` | Downloads Playwright's Chromium into `.cache/` (needed once for the browser tests) |
 | `npm run test:browser` | Real-browser tests against the build: detection on real pages, masking, accessibility names, site notes and paused submits, hostile pages, popup and settings, the privacy probe, and the release package. Run `npm run build` and `npm run package` first |
-| `npm run accuracy` | Precision and recall of the detection rules on 164 tuning cases and 54 held-out cases |
+| `npm run accuracy` | Precision and recall of the detection rules on 206 tuning cases (42 of them in other languages) and 54 held-out cases |
 | `npm run package` | Builds `release/shouldnt-wouldnt-<version>.zip` and refuses to include tests, TypeScript sources, or source maps |
 | `npm run bench` | Page benchmark against a no-extension baseline ([PERFORMANCE_AUDIT.md](PERFORMANCE_AUDIT.md)) |
 
@@ -219,7 +233,7 @@ What these results do not show:
 | --- | --- |
 | It never reads what a person types: no `input.value`, `FormData`, input or keyboard listeners, clipboard, or text inside editable areas | A source scan in the unit tests fails on those APIs ([tests/privacy-scan.test.ts](tests/privacy-scan.test.ts)). A runtime probe ([tests/browser/probe-prelude.js](tests/browser/probe-prelude.js)) wraps every value-reading API inside the content script's world in a real browser while synthetic values are typed, pasted, revealed, and submitted, and the test expects zero reads ([tests/browser/privacy.test.mjs](tests/browser/privacy.test.mjs)) |
 | It makes no network requests | The scan forbids network APIs; the probe traps `fetch`, `XMLHttpRequest`, `WebSocket`, `sendBeacon`, and others; the browser tests serve every page locally and fail if any request leaves the fixtures |
-| It stores one value | `protectionEnabled` (true or false) in `chrome.storage.local`, never synced. The scan allows no other storage and no writes outside the service worker; a browser test reads extension storage and expects only that key |
+| It stores two values | `protectionEnabled` (true or false) and `language` (a language code or `auto`) in `chrome.storage.local`, never synced. The scan allows no other storage, one write in the whole extension, and only those two keys; a browser test reads extension storage and expects nothing else |
 | Pages cannot rewrite a note | `textContent` only, inside closed shadow roots; the scan forbids `innerHTML`, `insertAdjacentHTML`, `eval`, and similar |
 | Messages carry nothing typed | Exact key sets and types, plus a deny-list of keys such as `value` and `password` ([tests/messages.test.ts](tests/messages.test.ts)) |
 
@@ -291,7 +305,11 @@ Known limitations:
   Show goes, which is also an extra keyboard stop. The note's button style overrode the `hidden`
   attribute. It was found after submission, during zoom and high-contrast checks. The fix is not in the
   store until the 0.1.1 review finishes.
-- Rules, not a model, and English only: labels that do not resemble the patterns are missed.
+- Rules, not a model: labels that do not resemble the patterns are missed. Labels are recognized in
+  English and, through drafted phrase lists, in the 11 other languages above; other languages are not.
+- The translations are drafts that native speakers have not reviewed.
+- The content script carries every language, so it grew from about 77 KB to about 235 KB. Only the
+  language in use is built in memory.
 - Fields in cross-origin frames that are not `http`/`https`, closed shadow roots on built-in elements,
   and custom-drawn text boxes are not seen.
 - A bare "Account number" warns as a bank account, which may be wrong.
@@ -303,6 +321,7 @@ Known limitations:
 Future work:
 
 - Upload 0.1.3 once the 0.1.1 review finishes.
+- A native-speaker review of every translation and of the label phrases ([TRANSLATIONS.md](TRANSLATIONS.md)).
 - A screen-reader pass with NVDA or VoiceOver, and the other hand checks in
   [store/manual-tests.md](store/manual-tests.md).
 - Generate the benchmark results into [PERFORMANCE_AUDIT.md](PERFORMANCE_AUDIT.md).

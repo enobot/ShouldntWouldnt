@@ -77,3 +77,31 @@ button[aria-busy="true"] {
 .k {
   color: #6b4a52;
 }
+
+.language {
+  margin: 10px 0;
+}
+
+.languages {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.languages[hidden] {
+  display: none;
+}
+
+.languages button {
+  width: 100%;
+  margin: 0;
+  text-align: start;
+}
+
+.languages button[aria-pressed="true"] {
+  color: #fff;
+  background: #7a2430;
+}

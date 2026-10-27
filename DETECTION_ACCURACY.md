@@ -8,7 +8,7 @@ set of field examples, before and after this audit's changes.
 
 ## How it was measured
 
-- **Data:** [tests/accuracy-cases.ts](tests/accuracy-cases.ts) (151 cases at the audit, 164 since 0.1.3, the *tuning set*) and
+- **Data:** [tests/accuracy-cases.ts](tests/accuracy-cases.ts) (151 cases at the audit, 164 since 0.1.3, 206 since 0.2.0, the *tuning set*) and
   [tests/accuracy-holdout.ts](tests/accuracy-holdout.ts) (54 cases, the *held-out set*). Each case is
   the metadata of one realistic field, written to imitate common patterns: hosted checkouts, payment
   widgets, direct-deposit and benefits forms, sign-in and two-step pages, job and health intake forms,
@@ -40,6 +40,14 @@ tuning cases for them (two of which used to expect no warning). Those cases were
 the new rules, so they are tuning cases. With them the tuning set is 164 cases (154 scored, 10
 ambiguous), all 154 correct; the held-out set is unchanged at 43 of 43. The tables below are the
 original audit's.
+
+Version 0.2.0 recognizes labels in Spanish, Chinese (Simplified and Traditional), Vietnamese, Tagalog,
+Korean, Arabic, French, Russian, Portuguese, and Haitian Creole, from drafted phrase lists that native
+speakers have not reviewed (see [TRANSLATIONS.md](TRANSLATIONS.md)). Labels are normalized with accents
+removed and every script kept. 42 tuning cases cover them, including traps such as "Dirección de
+correo electrónico" (an email address, not a street address) and sign-in codes such as "验证码" and
+"Код подтверждения". All 42 pass, but they were written with the phrase lists, so they show the rules
+do what was intended, not how well they work on real non-English sites.
 
 ### Tuning set (151 cases: 141 scored, 10 ambiguous)
 

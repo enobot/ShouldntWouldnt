@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Shouldn't Wouldn't",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "Think Twice Before You Share. Free local reminders before you enter sensitive information.",
   "minimum_chrome_version": "120",
   "action": {

@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { isExtensionPageSender, isWebPageSender, parseEnabledState, parseIncoming, parsePageSummary } from "../src/shared/messages.js";
+import {
+  isExtensionPageSender,
+  isWebPageSender,
+  parseEnabledState,
+  parseIncoming,
+  parseLanguageState,
+  parsePageSummary,
+} from "../src/shared/messages.js";
 
 const SUMMARY = {
   ok: true,
@@ -14,6 +21,21 @@ const SUMMARY = {
 };
 
 describe("messages", () => {
+  test("language messages carry only a known language choice", () => {
+    assert.deepEqual(parseIncoming({ type: "sw/getLanguage" }), { type: "sw/getLanguage" });
+    assert.deepEqual(parseIncoming({ type: "sw/setLanguage", language: "es" }), { type: "sw/setLanguage", language: "es" });
+    assert.deepEqual(parseIncoming({ type: "sw/setLanguage", language: "auto" }), { type: "sw/setLanguage", language: "auto" });
+    assert.equal(parseIncoming({ type: "sw/setLanguage", language: "xx" }), null);
+    assert.equal(parseIncoming({ type: "sw/setLanguage", language: "es", value: "secret" }), null);
+    assert.equal(parseIncoming({ type: "sw/getLanguage", language: "es" }), null);
+    assert.deepEqual(parseLanguageState({ ok: true, type: "sw/languageState", language: "ar" }), {
+      ok: true,
+      type: "sw/languageState",
+      language: "ar",
+    });
+    assert.equal(parseLanguageState({ ok: true, type: "sw/languageState", language: "ar", extra: 1 }), null);
+  });
+
   test("only plain checked messages are accepted", () => {
     assert.deepEqual(parseIncoming({ type: "sw/getEnabled" }), { type: "sw/getEnabled" });
     assert.deepEqual(parseIncoming({ type: "sw/setEnabled", enabled: false }), {

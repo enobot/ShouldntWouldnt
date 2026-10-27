@@ -29,7 +29,7 @@ describe("store documents", () => {
     assert.match(privacy, /Social Security number/);
     assert.match(privacy, /cannot guarantee that every website is safe/);
     assert.match(privacy, /cannot stop a site that is trying to do that/);
-    assert.match(privacy, /storage` permission is used only to remember the on\/off setting/);
+    assert.match(privacy, /storage` permission is used only to remember the on\/off setting and the language choice/);
     assert.match(terms, /does not promise that a website is safe/);
     assert.match(terms, /hide, cover, or remove a reminder/);
     assert.equal(SHORT.length <= 132, true);

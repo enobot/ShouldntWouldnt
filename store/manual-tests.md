@@ -1,13 +1,13 @@
 # Manual checks
 
-Version 0.1.3. Most of what used to be checked by hand is now automated in a real browser
+Version 0.2.0. Most of what used to be checked by hand is now automated in a real browser
 (`npm run test:browser`, Playwright's Chromium 156 with the unpacked extension; see
 [SECURITY_AUDIT.md](../SECURITY_AUDIT.md)). The checks below are the ones automation cannot do, or
 that must be repeated in branded Chrome with the real release ZIP before submission. Do not type real
 personal information. The values below are synthetic.
 
 Serve the fake pages, then load the unpacked extension after `npm test` and `npm run build`, or unzip
-`release/shouldnt-wouldnt-0.1.3.zip` after `npm run package`:
+`release/shouldnt-wouldnt-<version>.zip` after `npm run package`:
 
 ```bash
 python3 -m http.server 8765 --bind 127.0.0.1
@@ -65,6 +65,10 @@ fix.**
 3. Click the real toolbar button and read the popup on `ssn.html`, on `chrome://extensions`, and on a
    page with the protection switch off.
 4. Chrome's address autofill with a saved test address (only card autofill was simulated).
+5. For each language: a native speaker reads the welcome page, the popup, a note with "Why am I seeing
+   this?" open, and the paused-submit site note on `long-page.html` over http, and checks the label
+   phrases in `detect.ts` (see [TRANSLATIONS.md](../TRANSLATIONS.md)).
+6. A screen reader in Spanish and in Arabic: the note is read in that language's voice.
 
 The store screenshots are captured automatically (`npm run store-assets`, see
 [CHROME_WEB_STORE_CHECKLIST.md](../CHROME_WEB_STORE_CHECKLIST.md)). Replace them by hand only if this

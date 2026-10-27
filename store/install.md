@@ -1,13 +1,14 @@
 # Install Shouldn't Wouldn't unpacked
 
-This is a developer load, not a Chrome Web Store install. Version 0.1.1 was submitted to the Chrome Web Store on October 26, 2026 and is pending review; Google has not approved it yet. This repository is at 0.1.3, which will be uploaded after that review.
+This is a developer load, not a Chrome Web Store install. Version 0.1.1 was submitted to the Chrome Web Store on October 26, 2026 and is pending review; Google has not approved it yet. 0.1.3 will be uploaded after that review. This repository is at 0.2.0, which adds a choice of languages.
 
 1. Install Node.js 22 or newer.
-2. In this repository, run `npm install`, then `npm test`, then `npm run build`. The build writes `dist/content.js`, the compiled popup and service worker, and the icons. Load unpacked only after that build. `dist/` is not committed. To check exactly what would be uploaded, run `npm run package` and load the unzipped `release/shouldnt-wouldnt-0.1.3.zip` instead.
+2. In this repository, run `npm install`, then `npm test`, then `npm run build`. The build writes `dist/content.js`, the compiled popup and service worker, and the icons. Load unpacked only after that build. `dist/` is not committed. To check exactly what would be uploaded, run `npm run package` and load the unzipped `release/shouldnt-wouldnt-<version>.zip` instead.
 3. Open Chrome and go to `chrome://extensions`.
 4. Turn on Developer mode.
 5. Choose Load unpacked and select the repository root, the folder that contains `manifest.json`.
-6. Pin Shouldn't Wouldn't if you want the popup one click away.
+6. A welcome page opens and asks for a language. Pick one; you can change it later from the popup.
+7. Pin Shouldn't Wouldn't if you want the popup one click away.
 
 The popup starts from "Unable to determine" until it can read the active tab. On `chrome://` pages, the Chrome Web Store, PDFs, and the new tab page, it stays on "Unable to determine" because the content script is only matched to `http` and `https`.
 

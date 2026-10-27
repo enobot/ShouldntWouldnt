@@ -27,6 +27,9 @@ interface ChromeRuntime {
   getURL(path: string): string;
   sendMessage(message: unknown, responseCallback?: (response: unknown) => void): void;
   connect(connectInfo: { name: string }): ChromePort;
+  onInstalled: {
+    addListener(callback: (details: { reason: string }) => void): void;
+  };
   onMessage: {
     addListener(
       callback: (
@@ -43,6 +46,7 @@ interface ChromeTabs {
     queryInfo: { active?: boolean; currentWindow?: boolean },
     callback: (tabs: Array<{ id?: number }> | undefined) => void,
   ): void;
+  create(createProperties: { url: string }, callback?: () => void): void;
   sendMessage(tabId: number, message: unknown, responseCallback?: (response: unknown) => void): void;
   sendMessage(
     tabId: number,
@@ -68,7 +72,7 @@ interface ChromeStorageChange {
 }
 
 interface ChromeStorageArea {
-  get(key: string, callback: (items: Record<string, unknown> | undefined) => void): void;
+  get(keys: string | string[], callback: (items: Record<string, unknown> | undefined) => void): void;
   set(items: Record<string, unknown>, callback?: () => void): void;
 }
 
@@ -79,7 +83,12 @@ interface ChromeStorage {
   };
 }
 
+interface ChromeI18n {
+  getUILanguage(): string;
+}
+
 interface ChromeNamespace {
+  i18n?: ChromeI18n;
   runtime: ChromeRuntime;
   tabs: ChromeTabs;
   action: ChromeAction;
