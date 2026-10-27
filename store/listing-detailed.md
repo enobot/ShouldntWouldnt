@@ -1,6 +1,8 @@
 # Chrome Web Store detailed description
 
-Not submitted. Paste the text below the heading into the detailed description. It describes version 0.1.1 as of the October 26, 2026 audit. Do not publish a sentence from this file if the code no longer does that thing. Mark the item as free.
+Not submitted yet. Paste everything below the line into the dashboard's Description field. It describes version 0.1.1 as of the October 26, 2026 audit. Do not publish a sentence from this file if the code no longer does that thing. Publish it as a free item; the extension does not process payments.
+
+---
 
 Shouldn't Wouldn't is completely free. Think Twice Before You Share. There is no account, subscription, license, or paid upgrade. Every reminder in this extension is available to every person who installs it.
 
@@ -25,5 +27,3 @@ Your Privacy Matters. Shouldn't Wouldn't was created to help you and your loved 
 Shouldn't Wouldn't cannot guarantee that every website is safe. A website can still hide, cover, or remove a reminder. Websites you choose to submit information to may collect that information under their own privacy policies.
 
 Protection can be turned off from the popup. That choice is saved in this browser profile and stays off until you turn it back on, including after Chrome closes. Nothing you type is saved.
-
-This listing has not been submitted to the Chrome Web Store. If it is published later, publish it as a free item. The extension does not process payments.

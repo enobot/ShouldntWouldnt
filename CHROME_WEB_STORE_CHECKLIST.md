@@ -54,9 +54,11 @@ Policy sources checked on October 26, 2026:
 
 ## Store listing tab
 
-- **Description:** paste the text of `store/listing-detailed.md` below its heading. The short
-  description (131 characters, in `store/listing-short.md`) is: "Think Twice Before You Share. Free
-  local reminders when a page asks for sensitive information. Nothing you type leaves the browser."
+- **Description:** paste everything below the `---` line in `store/listing-detailed.md`.
+- **Summary:** the store shows the manifest's `description` ("Think Twice Before You Share. Free local
+  reminders before you enter sensitive information."). If the dashboard asks for a summary of its own,
+  use the 131-character sentence in `store/listing-short.md`: "Think Twice Before You Share. Free local
+  reminders when a page asks for sensitive information. Nothing you type leaves the browser."
 - **Category:** choose Privacy & Security if the dashboard offers it; otherwise the closest productivity
   or tools category.
 - **Language:** English.
