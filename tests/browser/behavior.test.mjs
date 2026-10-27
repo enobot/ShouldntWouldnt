@@ -249,6 +249,18 @@ describe("accessibility", () => {
     await page.close();
   });
 
+  test("a note for a field that is not masked shows no empty Show button", async () => {
+    const page = await open("https://shop.test/fixtures/masking.html");
+    await page.waitForSelector("#email[data-shouldnt-wouldnt=marked]");
+    const notes = await inspectNotes(page);
+    for (const pattern of [/asking for your password/, /asks for your email address/]) {
+      const note = notes.find((candidate) => candidate.texts.some((text) => pattern.test(text)));
+      const shown = note.buttonInfo.filter((info) => info.box).map((info) => info.name);
+      assert.deepEqual(shown, ["Why am I seeing this?", "Dismiss this reminder"], String(pattern));
+    }
+    await page.close();
+  });
+
   test("reminders never take focus on their own", async () => {
     const page = await browser.ctx.newPage();
     await page.setContent("<!doctype html><title>x</title>");

@@ -3,7 +3,8 @@
 Version 0.1.1 was submitted to the Chrome Web Store on October 26, 2026 and is pending Google's
 compliance review. Google has not approved or published it yet. On submission the dashboard warned that
 broad host permissions may need an in-depth review, which can take longer; the permissions were kept on
-purpose (see "Permission justifications"). This file replaces `store/submission-checklist.md` as the
+purpose (see "Permission justifications"). Version 0.1.2, which fixes a display bug found after
+submission, is packaged and waits for that review to finish before upload. This file replaces `store/submission-checklist.md` as the
 working list; that file now points here.
 
 Policy sources checked on October 26, 2026:
@@ -29,7 +30,7 @@ Policy sources checked on October 26, 2026:
 | Submission | **Submitted** October 26, 2026 by the account owner; pending review |
 | Manifest V3, permissions, CSP, no remote code | **Done** (verified by tests) |
 | Working popup, reliable reminders, masking | **Done** in Chromium automation; still needs a person to click through `store/manual-tests.md` in branded Chrome |
-| Release ZIP | **Done**: `npm run build && npm run package` writes `release/shouldnt-wouldnt-0.1.1.zip` (16 files: the manifest, popup, styles, icons, the bundled content script, and only the modules the service worker and popup import; no tests, no TypeScript, no source maps); `tests/browser/release.test.mjs` unzips it, loads it, and checks that a reminder appears, the popup renders, and the packaged worker saves the switch |
+| Release ZIP | **Done**: `npm run build && npm run package` writes `release/shouldnt-wouldnt-<version>.zip` (currently 0.1.2; 16 files: the manifest, popup, styles, icons, the bundled content script, and only the modules the service worker and popup import; no tests, no TypeScript, no source maps); `tests/browser/release.test.mjs` unzips it, loads it, and checks that a reminder appears, the popup renders, and the packaged worker saves the switch |
 | Privacy policy matches the code | **Done** (`store/privacy-policy.md`, updated for masking, the badge, and the store's data disclosure) |
 | Privacy policy at a public HTTPS URL | **Done**: https://github.com/enobot/ShouldntWouldnt/blob/main/store/privacy-policy.md (pushed October 26, 2026) |
 | Support email works | **Blocker until checked**: `support@shouldntwouldnt.com` is used consistently. The domain has mail (MX) records pointing to Google, so an inbox may exist; delivery was not tested |
@@ -42,7 +43,7 @@ Policy sources checked on October 26, 2026:
 
 ## Completed requirements
 
-- [x] `manifest_version: 3`, version `0.1.1` in both `manifest.json` and `package.json` (the package
+- [x] `manifest_version: 3`, version `0.1.2` in both `manifest.json` and `package.json` (the package
       script refuses to build if they differ).
 - [x] Name "Shouldn't Wouldn't" (18 characters); manifest description 90 characters, under the 132 limit.
 - [x] Permissions: `storage` plus host access to `http://*/*` and `https://*/*`. No optional
@@ -163,11 +164,16 @@ Submitted for review on October 26, 2026 by the account owner. Dashboard status:
 - [x] Privacy policy URL entered.
 - [x] `release/shouldnt-wouldnt-0.1.1.zip` uploaded, the three tabs filled in, and submitted.
 
-Still open (not recorded as done):
+After submission:
 
-- [ ] Confirm `support@shouldntwouldnt.com` receives mail.
-- [ ] A person loads the release ZIP in branded Chrome and runs `store/manual-tests.md`, including the
-      real toolbar popup, a screen reader pass, and Chrome's own autofill on `fixtures/masking.html`.
+- [x] `support@shouldntwouldnt.com` receives mail (confirmed by the account owner, October 26, 2026).
+- [x] The account owner loaded the release ZIP in branded Chrome and reported that it works.
+- [x] Zoom, large font, High Contrast, card autofill, and remove/reinstall checked in Chromium; see
+      `store/manual-tests.md`. That found a bug in the submitted 0.1.1: notes for fields that are not
+      masked show an empty Show button. Fixed in 0.1.2.
+- [ ] The hand checks still listed in `store/manual-tests.md` (screen reader, password manager, real
+      toolbar popup, address autofill).
+- [ ] Upload `release/shouldnt-wouldnt-0.1.2.zip` from the dashboard once the 0.1.1 review finishes.
 - [ ] Decide the open product question below.
 
 If the review rejects the item, Google's email names the policy it applied. Fix that, then rebuild and

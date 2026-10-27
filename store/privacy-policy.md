@@ -1,6 +1,6 @@
 # Privacy policy
 
-Shouldn't Wouldn't, version 0.1.1. This policy describes what this version of the extension actually does. It is the notice to publish with the Chrome Web Store listing. It is not a law firm's opinion, and it does not change what a website does with information a person chooses to submit.
+Shouldn't Wouldn't, versions 0.1.1 and 0.1.2. This policy describes what these versions of the extension actually do. It is the notice to publish with the Chrome Web Store listing. It is not a law firm's opinion, and it does not change what a website does with information a person chooses to submit.
 
 Contact: support@shouldntwouldnt.com
 

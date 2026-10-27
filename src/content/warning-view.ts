@@ -36,6 +36,7 @@ const SHADOW_CSS = `
 }
 .panel:focus { outline: 2px solid #1e3a5f; outline-offset: 2px; }
 p { margin: 0 0 8px; }
+[hidden] { display: none !important; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; }
 button {
   font: inherit;

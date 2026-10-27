@@ -20,12 +20,13 @@ Everything happens in the browser. The extension reads field labels, not what yo
 on/off setting, and makes no network requests.
 
 **Status:** version 0.1.1 was submitted to the Chrome Web Store on October 26, 2026 and is pending
-Google's review. It is not installable from the store yet. The repository was first named SurfSafe;
+Google's review. It is not installable from the store yet. Version 0.1.2, in this repository, fixes a
+display bug found after submission and will be uploaded when that review finishes. The repository was first named SurfSafe;
 GitHub redirects the old address.
 
 ## Features
 
-Implemented in version 0.1.1:
+Implemented (version 0.1.2 in this repository; 0.1.1 is the submitted version):
 
 - **Field reminders.** A red outline and a note beside fields that appear to ask for a Social Security
   number, card number, card security code, bank account or routing number, government ID, passport,
@@ -264,10 +265,11 @@ Each item below is documented in the audit reports with the fix and its regressi
 
 Known limitations:
 
-- **Known bug in 0.1.1:** notes for fields that are not masked (password, email, phone, address, date
-  of birth, card security code, health) show an empty bordered button where Show goes, which is also an
-  extra keyboard stop. The note's button style overrides the `hidden` attribute. It was found after
-  submission, during zoom and high-contrast checks, and is not yet fixed in this repository.
+- **Known bug in the submitted 0.1.1, fixed in 0.1.2:** notes for fields that are not masked (password,
+  email, phone, address, date of birth, card security code, health) show an empty bordered button where
+  Show goes, which is also an extra keyboard stop. The note's button style overrode the `hidden`
+  attribute. It was found after submission, during zoom and high-contrast checks. 0.1.2 is not in the
+  store until the 0.1.1 review finishes.
 - Rules, not a model, and English only: labels that do not resemble the patterns are missed.
 - Fields in cross-origin frames that are not `http`/`https`, closed shadow roots on built-in elements,
   and custom-drawn text boxes are not seen.
@@ -279,7 +281,7 @@ Known limitations:
 
 Future work:
 
-- Release a fix for the empty Show button.
+- Upload 0.1.2, with the empty Show button fix, once the 0.1.1 review finishes.
 - Decide whether email and phone fields keep inline notes; they appear on most sign-in forms.
 - A screen-reader pass with NVDA or VoiceOver, and the other hand checks in
   [store/manual-tests.md](store/manual-tests.md).

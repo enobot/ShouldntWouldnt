@@ -1,13 +1,13 @@
 # Manual checks
 
-Version 0.1.1. Most of what used to be checked by hand is now automated in a real browser
+Version 0.1.2. Most of what used to be checked by hand is now automated in a real browser
 (`npm run test:browser`, Playwright's Chromium 156 with the unpacked extension; see
 [SECURITY_AUDIT.md](../SECURITY_AUDIT.md)). The checks below are the ones automation cannot do, or
 that must be repeated in branded Chrome with the real release ZIP before submission. Do not type real
 personal information. The values below are synthetic.
 
 Serve the fake pages, then load the unpacked extension after `npm test` and `npm run build`, or unzip
-`release/shouldnt-wouldnt-0.1.1.zip` after `npm run package`:
+`release/shouldnt-wouldnt-0.1.2.zip` after `npm run package`:
 
 ```bash
 python3 -m http.server 8765 --bind 127.0.0.1
@@ -34,19 +34,37 @@ note is expected on them.
 | `privacy-probe.html` | No value-reading, clipboard, input-listener, or network API is used by the extension; messages carry no typed value; storage holds only the on/off boolean |
 | Release ZIP | Unzipped package loads, marks a field, the popup renders without errors, and the packaged worker saves the switch |
 
-## Still to do by hand, in branded Chrome, before submission
+## Hand checks stood in for by automation (October 26, 2026, after submission)
 
-1. Load the release ZIP (not the source folder) with Load unpacked.
-2. Click the real toolbar button and read the popup on `ssn.html`, on `chrome://extensions`, and on a
-   page with the protection switch off. The automated tests open `popup.html` in a tab instead.
-3. On `masking.html`, use Chrome's own address autofill and card autofill (with test entries) and
-   confirm the fields still fill and stay masked.
-4. With a password manager installed, confirm it does not offer to save the SSN or card number.
-5. Screen reader pass (NVDA on Windows or VoiceOver on macOS): focus the SSN field and confirm the
+Run once against the unzipped submitted 0.1.1 package in Playwright's Chromium 156, not in branded
+Chrome. The account owner loaded the same package in branded Chrome and reported that it works and that
+`support@shouldntwouldnt.com` receives mail.
+
+| Check | How | Result |
+| --- | --- | --- |
+| 200% zoom | A 640-wide layout at device scale 2 (what 200% zoom gives on a 1280-wide window) on `ssn`, `masking`, `payment`, `multiple`, `register`, `validation`, `bank`, `credit-card`, and `long-page` over http with a paused submit | Notes wrap inside the page; nothing overlaps a field, label, or heading; no sideways scrolling. Found the bug below |
+| Large default font | Chrome's "Very large" setting (24 px) through DevTools | Nothing overlaps. The note sets its own 14 px text, so Chrome's font-size setting does not enlarge it; zoom does. Not changed |
+| Windows High Contrast | Forced colors emulated, dark and light | Note borders, buttons, and the paused-submit panel stay visible. The field's red outline becomes the normal field border, as expected |
+| Card autofill | DevTools `Autofill.trigger` with a test card on `payment.html` and `masking.html` | Name, number, expiry, and code fill; the card number stays masked and its value is intact; the code fills and is not masked, by design |
+| Remove and reinstall | `chrome.management.uninstallSelf()`, then the same profile loads the package again | The saved "off" choice was removed with the extension; the reinstall starts On |
+| Toolbar popup | `chrome.action.openPopup()` | Could not open in headless Chromium. Still covered by the tests that open `popup.html` in a tab |
+
+**Bug found and fixed.** Every note for a field that is not masked (password, email, phone, address,
+date of birth, card security code, health) showed an empty bordered button where Show goes, and that
+button was an extra tab stop with no name. Cause: the note stylesheet's `display: inline-flex` on
+buttons overrode the `hidden` attribute. Fixed in `src/content/warning-view.ts`; the regression test
+"a note for a field that is not masked shows no empty Show button" in `behavior.test.mjs` fails on the
+submitted 0.1.1 build and passes now. **The submitted 0.1.1 package still has this bug; 0.1.2 has the
+fix.**
+
+## Still to do by hand
+
+1. Screen reader pass (NVDA on Windows or VoiceOver on macOS): focus the SSN field and confirm the
    label and reminder are read; Tab to Show, Why, and Dismiss; open the popup and toggle the switch.
-6. At 200% browser zoom and with a large default font, confirm notes wrap and nothing overlaps.
-7. Windows High Contrast (forced colors): confirm note borders and buttons stay visible.
-8. Remove the extension and confirm the saved choice is gone when it is installed again.
+2. With a password manager installed, confirm it does not offer to save the SSN or card number.
+3. Click the real toolbar button and read the popup on `ssn.html`, on `chrome://extensions`, and on a
+   page with the protection switch off.
+4. Chrome's address autofill with a saved test address (only card autofill was simulated).
 
 The store screenshots are captured automatically (`npm run store-assets`, see
 [CHROME_WEB_STORE_CHECKLIST.md](../CHROME_WEB_STORE_CHECKLIST.md)). Replace them by hand only if this
