@@ -203,13 +203,15 @@ Playwright 1.64.1 (Chromium 156):
 | `npm run accuracy` | Tuning set 196 of 196 scored cases correct (42 in other languages); held-out set 43 of 43 |
 
 **CI:** GitHub Actions runs [.github/workflows/test.yml](.github/workflows/test.yml) on every push and
-pull request to `main`, on Ubuntu with Node.js 22. Its first five runs, on October 26, 2026, all passed
+pull request to `main`, on Ubuntu with Node.js 22. On October 26, 2026 it ran seven times. Six runs passed
 both jobs (typecheck, unit tests, build, and package; and the real-browser tests in Playwright's
-Chromium), including [run 40441430099](https://github.com/enobot/ShouldntWouldnt/actions/runs/40441430099)
-on commit `3119545` (version 0.1.3). The browser tests took 30 to 40 seconds each time; installing
-Chromium and its system packages took from under a minute to about seven, so each job has a time limit.
-Five runs are not enough to know how often the browser tests flake on a hosted runner. The badge at the
-top shows the latest run.
+Chromium), including [run 40446843342](https://github.com/enobot/ShouldntWouldnt/actions/runs/40446843342)
+on commit `a09d095` (version 0.2.0). One run, on commit `cd9b6f3`, failed one real-browser test with an
+assertion error. Its log did not say which test, and the next run passed the same tests with only a font
+rule changed in between, so it is treated as an intermittent failure until it happens again; failing
+tests are now listed on the run page. The browser tests take 30 to 40 seconds; installing Chromium and its
+system packages took from under a minute to about seven, so each job has a time limit. The badge at the top
+shows the latest run.
 
 What these results do not show:
 
