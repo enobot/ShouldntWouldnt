@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Privacy probe</title>
+    <link rel="stylesheet" href="common.css" />
+  </head>
+  <body>
+    <h1>Privacy probe</h1>
+    <p class="note">
+      Used by the automated privacy test. Every field here is a place where a careless extension could read what a
+      person typed: prefilled values, a hidden field, a text area, an editable region beside a field and inside a
+      label, a drop-down, and an error message that repeats the typed value. The values are synthetic.
+    </p>
+    <form id="form" action="#sent" method="get">
+      <label>Social Security number <input id="ssn" name="ssn" value="900-00-0002" /></label>
+      <input type="hidden" name="token" value="synthetic-hidden-value" />
+      <label>Card number <input id="card" name="card" autocomplete="cc-number" /></label>
+      <label>Security code <input id="cvv" name="cvv" autocomplete="cc-csc" /></label>
+      <label>Password <input id="password" name="password" type="password" /></label>
+      <label>Routing number <input id="routing" name="routing" /></label>
+      <label>Comments <textarea id="comments" name="comments">synthetic default comment</textarea></label>
+      <div id="editor" contenteditable="true" style="border: 1px solid #ccc; min-height: 2em">Social Security number</div>
+      <input id="after-editor" name="after_editor" />
+      <label><span contenteditable="true" id="label-editor">Bank account number</span> <input id="in-editable-label" name="in_editable_label" /></label>
+      <label>State <select id="state" name="state"><option>Social Security number</option><option selected>Other</option></select></label>
+      <label>Bank account number <input id="bank" name="bank" aria-describedby="bank-error" /></label>
+      <p id="bank-error" class="note"></p>
+      <button id="submit" type="submit">Continue</button>
+    </form>
+    <script>
+      // A page that echoes what was typed into an error message, as some sites do.
+      document.getElementById("bank").addEventListener("input", function (event) {
+        document.getElementById("bank-error").textContent = event.target.value ? "Check the number: " + event.target.value : "";
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Misleading page text</title>
+    <link rel="stylesheet" href="common.css" />
+  </head>
+  <body>
+    <h1>Benefits questions</h1>
+    <p>
+      Your Social Security number, bank account number, and card number are never needed on this page. Do not type them
+      into the boxes below.
+    </p>
+    <form action="#questions" method="get">
+      <fieldset>
+        <legend>Questions about your Social Security benefits</legend>
+        <label>Do you receive Social Security benefits?
+          <select name="benefits"><option>Yes</option><option>No</option></select>
+        </label>
+        <label>Your question <textarea name="question"></textarea></label>
+        <label>Search our help pages <input type="search" name="q" placeholder="Search for SSN, card, or bank help" /></label>
+      </fieldset>
+      <button type="submit">Send</button>
+    </form>
+  </body>
+</html>

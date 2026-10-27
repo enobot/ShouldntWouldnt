@@ -50,15 +50,22 @@ export function buildSnapshot(input: {
   };
 }
 
+const SKIP_TEXT_IN = new Set(["INPUT", "TEXTAREA", "SELECT", "OPTION", "OPTGROUP", "DATALIST", "SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE"]);
+
+/** Text a person typed into an editable region. Checked by attribute so it never forces a style pass. */
+function insideEditable(el: Element): boolean {
+  const owner = el.closest("[contenteditable]");
+  return owner !== null && owner.getAttribute("contenteditable")?.toLowerCase() !== "false";
+}
+
+/** Page text near a field, never the text of a form control or an editable region. */
 function textWithoutControls(el: Element): string {
+  if (insideEditable(el)) return "";
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       const parent = node.parentElement;
-      if (!parent) return NodeFilter.FILTER_REJECT;
-      const tag = parent.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "SCRIPT" || tag === "STYLE") {
-        return NodeFilter.FILTER_REJECT;
-      }
+      if (!parent || SKIP_TEXT_IN.has(parent.tagName)) return NodeFilter.FILTER_REJECT;
+      if (parent !== el && insideEditable(parent)) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     },
   });
@@ -75,15 +82,44 @@ function rootOf(el: Element): ParentNode {
   return root instanceof Document || root instanceof ShadowRoot ? root : document;
 }
 
+/**
+ * label[for] lookups for one batch of fields, built with one query per document or shadow root.
+ * Without it every field would run its own document-wide query. (The element's own `labels` list is
+ * slower still in Chrome, and it leaves live lists that every later page change must update.)
+ */
+let forIndex: Map<ParentNode, Map<string, Element>> | null = null;
+
+export function withLabelIndex<T>(work: () => T): T {
+  const outer = forIndex;
+  forIndex = outer ?? new Map();
+  try {
+    return work();
+  } finally {
+    forIndex = outer;
+  }
+}
+
+function labelForId(root: ParentNode, id: string): Element | null {
+  if (!forIndex) return root.querySelector(`label[for="${CSS.escape(id)}"]`);
+  let index = forIndex.get(root);
+  if (!index) {
+    index = new Map();
+    for (const label of root.querySelectorAll("label[for]")) {
+      const target = label.getAttribute("for");
+      if (target && !index.has(target)) index.set(target, label);
+    }
+    forIndex.set(root, index);
+  }
+  return index.get(id) ?? null;
+}
+
 function labelText(el: Element): string {
-  const root = rootOf(el);
-  if (el.id && "querySelector" in root) {
-    const label = root.querySelector(`label[for="${CSS.escape(el.id)}"]`);
+  if (el.id) {
+    const label = labelForId(rootOf(el), el.id);
     if (label) return textWithoutControls(label);
   }
   const wrapped = el.closest("label");
-  if (wrapped) return textWithoutControls(wrapped);
-  return "";
+  return wrapped ? textWithoutControls(wrapped) : "";
 }
 
 function labelledByText(el: Element): string {

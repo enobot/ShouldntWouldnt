@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>React single-page app</title>
+    <link rel="stylesheet" href="../common.css" />
+    <script src="/node_modules/react/umd/react.production.min.js"></script>
+    <script src="/node_modules/react-dom/umd/react-dom.production.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // React 18 with controlled inputs. Every keystroke re-renders the form.
+      // Served from the repository root so the UMD files load from node_modules.
+      var h = React.createElement;
+
+      function Field(props) {
+        return h(
+          "label",
+          null,
+          props.label + " ",
+          h("input", {
+            name: props.name,
+            type: props.type || "text",
+            autoComplete: props.autoComplete || undefined,
+            value: props.values[props.name] || "",
+            onChange: function (event) {
+              props.onChange(props.name, event.target.value);
+            },
+          }),
+        );
+      }
+
+      function SignUp(props) {
+        return h(
+          "form",
+          {
+            action: "#signup",
+            onSubmit: function (event) {
+              event.preventDefault();
+              props.onSubmitted();
+            },
+          },
+          h("h2", null, "Create an account"),
+          h(Field, { label: "Full name", name: "name", autoComplete: "name", values: props.values, onChange: props.onChange }),
+          h(Field, { label: "Email", name: "email", type: "email", autoComplete: "email", values: props.values, onChange: props.onChange }),
+          h(Field, { label: "Password", name: "password", type: "password", autoComplete: "new-password", values: props.values, onChange: props.onChange }),
+          h(Field, { label: "Social Security number", name: "ssn", values: props.values, onChange: props.onChange }),
+          h(Field, { label: "Date of birth", name: "dob", autoComplete: "bday", values: props.values, onChange: props.onChange }),
+          h(Field, { label: "Favorite book", name: "book", values: props.values, onChange: props.onChange }),
+          h("p", { className: "note" }, "Characters typed: " + Object.keys(props.values).reduce(function (n, k) { return n + (props.values[k] || "").length; }, 0)),
+          h("button", { type: "submit" }, "Sign up"),
+        );
+      }
+
+      function Checkout(props) {
+        return h(
+          "form",
+          { action: "#checkout", onSubmit: function (event) { event.preventDefault(); props.onSubmitted(); } },
+          h("h2", null, "Checkout"),
+          h(Field, { label: "Card number", name: "card", autoComplete: "cc-number", values: props.values, onChange: props.onChange }),
+          h(Field, { label: "Expiration", name: "exp", autoComplete: "cc-exp", values: props.values, onChange: props.onChange }),
+          h(Field, { label: "Security code", name: "cvc", autoComplete: "cc-csc", values: props.values, onChange: props.onChange }),
+          h(Field, { label: "Order note", name: "note", values: props.values, onChange: props.onChange }),
+          h("button", { type: "submit" }, "Pay"),
+        );
+      }
+
+      function Home() {
+        var items = [];
+        for (var i = 0; i < 200; i += 1) items.push(h("li", { key: i }, "Story " + i));
+        return h("section", null, h("h2", null, "Home"), h("ul", null, items));
+      }
+
+      function App() {
+        var routeState = React.useState("home");
+        var route = routeState[0];
+        var setRoute = routeState[1];
+        var valueState = React.useState({});
+        var values = valueState[0];
+        var setValues = valueState[1];
+        var submittedState = React.useState(0);
+        function onChange(name, value) {
+          setValues(function (old) {
+            var next = Object.assign({}, old);
+            next[name] = value;
+            return next;
+          });
+        }
+        function onSubmitted() {
+          submittedState[1](function (n) { return n + 1; });
+        }
+        var page =
+          route === "signup"
+            ? h(SignUp, { values: values, onChange: onChange, onSubmitted: onSubmitted })
+            : route === "checkout"
+              ? h(Checkout, { values: values, onChange: onChange, onSubmitted: onSubmitted })
+              : h(Home);
+        return h(
+          "div",
+          null,
+          h("h1", null, "React app"),
+          h(
+            "nav",
+            null,
+            h("button", { id: "go-home", type: "button", onClick: function () { setRoute("home"); } }, "Home"),
+            " ",
+            h("button", { id: "go-signup", type: "button", onClick: function () { setRoute("signup"); } }, "Sign up"),
+            " ",
+            h("button", { id: "go-checkout", type: "button", onClick: function () { setRoute("checkout"); } }, "Checkout"),
+          ),
+          h("p", { id: "submitted", className: "note" }, "Submitted: " + submittedState[0]),
+          page,
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(h(App));
+    </script>
+  </body>
+</html>

@@ -92,20 +92,37 @@ function tierOf(category: WarnCategory): Tier {
 }
 
 function isSsn(text: string): boolean {
-  return /\bssn\b/.test(text) || /\bsocial security\b/.test(text);
+  if (/\bssn\b|\bsoc sec\b/.test(text)) return true;
+  if (!/\bsocial security\b/.test(text)) return false;
+  return !/\b(benefit|benefits|office|administration|income|disability|retirement|payment|payments|check|checks)\b/.test(text);
 }
 
+const NOT_PAYMENT_CARD =
+  /\b(library|loyalty|membership|member|rewards?|student|identity|id|medicare|medicaid|insurance|health|sim|business|greeting|playing|discount|club|access|report|key)\s+card\b/;
+
 function isCard(text: string): boolean {
-  if (/\bcc number\b|\bcard number\b|\bpan\b|\b(credit|debit) card number\b/.test(text)) return true;
+  if (NOT_PAYMENT_CARD.test(text)) return false;
+  if (/\bcc number\b|\bcard number\b|\b(credit|debit) card number\b|\b(cc|card)(num|number|no)\b|\bprimary account number\b/.test(text)) {
+    return true;
+  }
+  if (text === "pan" || /\bpan (number|no)\b/.test(text)) return true;
   const words = text.split(" ").filter(Boolean);
   if (words.length > 4) return false;
-  if (/\b(name|holder|type|brand|expir|month|year)\b/.test(text)) return false;
+  if (/\b(name|holder|type|brand|expir|month|year|message|note)\b/.test(text)) return false;
   return /\b(credit|debit) card\b/.test(text);
 }
 
 function isCvv(text: string): boolean {
-  if (/\bcc csc\b|\bcvv2?\b|\bcvc2?\b|\bsecurity code\b|\bcard verification\b/.test(text)) return true;
-  return text === "cid" || text === "cvc" || text === "cvv";
+  if (/\bcc csc\b|\bcvv2?\b|\bcvc2?\b|\bcsc\b|\bsecurity code\b|\bcard verification\b/.test(text)) return true;
+  return text === "cid";
+}
+
+/** Sign-in and verification codes. They are not card security codes, and they are not phone numbers. */
+function isOneTimeCode(text: string): boolean {
+  if (/\bone time (code|password|passcode|pin)\b|\botp\b|\b2fa\b|\btwo (factor|step)\b|\bauthenticator\b|\bverification code\b/.test(text)) {
+    return true;
+  }
+  return /\b(security|confirmation|login|sign in|access) code\b/.test(text) && /\b(sent|text|texted|sms|emailed|app)\b/.test(text);
 }
 
 function isBank(text: string): boolean {
@@ -125,9 +142,12 @@ function isGovernmentId(text: string): boolean {
     /\bgovernment id\b/.test(text) ||
     /\bnational id\b/.test(text) ||
     /\btax id\b/.test(text) ||
+    /\b(taxpayer|tax) (identification|id)\b/.test(text) ||
     /\bitin\b/.test(text) ||
     text === "tin" ||
-    /\bnational insurance\b/.test(text)
+    /\bnational insurance\b/.test(text) ||
+    /\bsocial insurance\b/.test(text) ||
+    /\bstate (issued )?id (number|card)\b|\bstate identification\b|\bstate issued id\b/.test(text)
   );
 }
 
@@ -150,18 +170,20 @@ function isLicense(text: string): boolean {
 
 function isPassword(text: string): boolean {
   if (/\b(hint|reminder)\b/.test(text)) return false;
-  return /\b(password|passwd|pwd)\b/.test(text);
+  return /\b(password|passwd|pwd|passcode|passphrase)\b/.test(text);
 }
 
 function isAddress(text: string): boolean {
-  if (/\b(email|ip|mac|web) address\b/.test(text)) return false;
-  if (/\bstreet address\b|\bmailing address\b|\bpostal code\b|\bzip code\b|\bpostcode\b|\baddress line\b/.test(text)) {
-    return true;
+  if (/\b(email|e mail|ip|mac|web|website|url|wallet|bitcoin|ethereum|crypto|server|network|hardware|memory)\b/.test(text)) {
+    return false;
   }
-  return text === "address" || text === "street";
+  if (/\baddress level\d\b/.test(text)) return false;
+  if (/\bpostal code\b|\bzip code\b|\bpostcode\b/.test(text)) return true;
+  return /\baddress\b/.test(text) || text === "street";
 }
 
 function isPhone(text: string): boolean {
+  if (/\b(model|type|brand|make|case|carrier|screen|charger|os)\b/.test(text)) return false;
   return /\b(phone|mobile|telephone|cell)( number)?\b/.test(text);
 }
 
@@ -170,11 +192,14 @@ function isEmail(text: string): boolean {
 }
 
 function isDob(text: string): boolean {
-  return /\bdate of birth\b|\bbirth date\b|\bbirthday\b|\bdob\b/.test(text);
+  return /\bdate of birth\b|\bbirth ?date\b|\bbirthday\b|\bdob\b|\bbirth (year|month|day)\b|\b(year|month|day) of birth\b/.test(text);
 }
 
 function isHealth(text: string): boolean {
-  if (/\b(diagnosis|prescription|medication|medical)\b/.test(text)) return true;
+  if (/\bmedical (school|college|degree|center|centre|device|devices|supplies|supply|field|specialty|specialties|equipment|license)\b/.test(text)) {
+    return false;
+  }
+  if (/\b(diagnosis|diagnoses|prescriptions?|medications?|medical|medicare|medicaid)\b/.test(text)) return true;
   if (/\bpatient (id|number|record)\b/.test(text)) return true;
   return /\bhealth (plan|record|information|insurance|history)\b/.test(text);
 }
@@ -219,14 +244,13 @@ function push(into: Map<WarnCategory, Candidate>, candidate: Candidate): void {
   if (!current || candidate.confidence > current.confidence) into.set(candidate.category, candidate);
 }
 
-function fromText(category: WarnCategory, source: Source, raw: string, into: Map<WarnCategory, Candidate>): void {
-  const text = normalizeText(raw);
-  if (!text || !matches(category, text)) return;
-  push(into, { category, confidence: WEIGHT[source], source });
-}
-
 function scanText(source: Source, raw: string, into: Map<WarnCategory, Candidate>): void {
-  for (const category of PRIORITY) fromText(category, source, raw, into);
+  // Normalize once per source; the category rules all read the same text.
+  const text = normalizeText(raw);
+  if (!text) return;
+  for (const category of PRIORITY) {
+    if (matches(category, text)) push(into, { category, confidence: WEIGHT[source], source });
+  }
 }
 
 function scanAutocomplete(raw: string, into: Map<WarnCategory, Candidate>): void {
@@ -242,7 +266,32 @@ function better(left: Candidate, right: Candidate): Candidate {
   return PRIORITY.indexOf(left.category) <= PRIORITY.indexOf(right.category) ? left : right;
 }
 
+function isOneTimeCodeField(snapshot: FieldSnapshot): boolean {
+  if (autocompleteTokens(snapshot.autocomplete).includes("one-time-code")) return true;
+  return [snapshot.name, snapshot.id, snapshot.ariaLabel, snapshot.labelText, snapshot.placeholder].some((raw) =>
+    isOneTimeCode(normalizeText(raw)),
+  );
+}
+
+/**
+ * A specific identity or payment label beats the field type. Sites hide an SSN in a password box,
+ * and use type="tel" on card, account, and SSN fields to get a number keypad on phones.
+ */
+function specificOverType(found: Map<WarnCategory, Candidate>, typed: WarnCategory): Candidate | undefined {
+  let best: Candidate | undefined;
+  for (const candidate of found.values()) {
+    if (candidate.category === typed || !HIGH.has(candidate.category)) continue;
+    if (candidate.source === "placeholder" || candidate.source === "nearby") continue;
+    best = best ? better(best, candidate) : candidate;
+  }
+  return best;
+}
+
 export function classifyField(snapshot: FieldSnapshot): Detection {
+  // A search box is never the place a site asks for these details, whatever its hint text says.
+  if (snapshot.type === "search") return NONE;
+  if (isOneTimeCodeField(snapshot)) return NONE;
+
   const found = new Map<WarnCategory, Candidate>();
   if (snapshot.type === "password") {
     push(found, { category: "password", confidence: WEIGHT.type, source: "type" });
@@ -264,7 +313,11 @@ export function classifyField(snapshot: FieldSnapshot): Detection {
   for (const candidate of found.values()) best = best ? better(best, candidate) : candidate;
   if (!best) return NONE;
 
-  if ((snapshot.type === "search" || snapshot.type === "url") && best.source === "nearby") return NONE;
+  if (snapshot.type === "password") best = specificOverType(found, "password") ?? best;
+  if (snapshot.type === "tel") best = specificOverType(found, "phone") ?? best;
+  if (snapshot.type === "url" && best.source === "nearby") return NONE;
+  // A drop-down list cannot hold a typed number, so the high-sensitivity number warnings do not apply to it.
+  if (snapshot.tag === "select" && HIGH.has(best.category)) return NONE;
 
   const tier = tierOf(best.category);
   const minimum = tier === "high" ? HIGH_CONFIDENCE_MIN : CONTEXT_CONFIDENCE_MIN;

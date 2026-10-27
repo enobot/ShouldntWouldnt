@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Covered note</title>
+    <link rel="stylesheet" href="common.css" />
+  </head>
+  <body>
+    <h1>A page that covers the note</h1>
+    <p class="note">
+      After the note appears, this page places an opaque box over it. Focusing the field lets the extension notice, and
+      the toolbar button shows "!" for this tab.
+    </p>
+    <form action="#covered" method="get">
+      <label>Social Security number <input id="ssn" name="ssn" /></label>
+      <button type="submit">Continue</button>
+    </form>
+    <div id="cover" hidden style="position: absolute; background: #fff; z-index: 2147483647"></div>
+    <script>
+      var cover = document.getElementById("cover");
+      new MutationObserver(function () {
+        var host = document.querySelector(".shouldnt-wouldnt-host");
+        if (!host) return;
+        var rect = host.getBoundingClientRect();
+        cover.style.left = rect.left + window.scrollX - 4 + "px";
+        cover.style.top = rect.top + window.scrollY - 4 + "px";
+        cover.style.width = rect.width + 8 + "px";
+        cover.style.height = rect.height + 8 + "px";
+        cover.hidden = false;
+      }).observe(document.body, { childList: true, subtree: true });
+    </script>
+  </body>
+</html>

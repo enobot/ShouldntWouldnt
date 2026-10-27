@@ -1,62 +1,75 @@
 # Manual checks
 
-Version 0.1.1. Automated checks cover the field rules and the repair budget. The browser column is what was actually seen in Chrome 156 on October 25, 2026 (Pacific), with the unpacked extension and the local fixture server. It is not a Chrome Web Store install. The toolbar popup was not opened. A full quit was done once, on a test profile, to check the saved on/off choice.
+Version 0.1.1. Most of what used to be checked by hand is now automated in a real browser
+(`npm run test:browser`, Playwright's Chromium 156 with the unpacked extension; see
+[SECURITY_AUDIT.md](../SECURITY_AUDIT.md)). The checks below are the ones automation cannot do, or
+that must be repeated in branded Chrome with the real release ZIP before submission. Do not type real
+personal information. The values below are synthetic.
 
-Serve the fake pages, then load the unpacked extension after `npm test` and `npm run build`:
+Serve the fake pages, then load the unpacked extension after `npm test` and `npm run build`, or unzip
+`release/shouldnt-wouldnt-0.1.1.zip` after `npm run package`:
 
 ```bash
 python3 -m http.server 8765 --bind 127.0.0.1
 ```
 
-Open `http://127.0.0.1:8765/fixtures/`. Do not type real personal information. The pages do not need anything typed into them.
+Open `http://127.0.0.1:8765/fixtures/`. Pages opened this way are `http`, so the insecure-connection
+note is expected on them.
 
-## Expected reminders
+## Covered by automated browser tests (October 26, 2026)
 
-| Page | Expect | Browser result |
-| --- | --- | --- |
-| `login.html` | Password gets a reminder. Username stays quiet. | Seen. Password marked, username not. |
-| `register.html` | Email, phone, and password get reminders. Full name stays quiet. | Seen. Those three were marked. Full name was not. The milder wording was not read off the screen; the field rules are covered by the automated tests. |
-| `payment.html` | Card number and security code get reminders. Name on card, expiration, and order note stay quiet. | Seen. Card number and security code marked. The other three were not. |
-| `ssn.html` | Social Security number gets a reminder. Comments stays quiet. | Seen, including a screenshot. The note read: "Sensitive Information: This website is requesting your Social Security number. Only share this information with organizations you trust." Comments had no note. |
-| `email-phone.html` | Both fields get the milder reminder. | Both fields were marked. The on-screen sentence was not read. |
-| `comment.html` | No reminder. | Seen. No note. |
-| `dynamic.html` | The page starts quiet. After "Add a Social Security field", one reminder appears. | The added field was marked. The empty start was not separately recorded. |
-| `spa.html` | After "Draw the form", the password is reminded and the username is quiet. "Replace the form" inserts a new password field and the reminder appears again. "Remove the note" deletes only the reminder; it should come back. Removing it more than five times within ten seconds can leave it gone until a later try, after a quiet gap. | Draw: password marked, username not. Replace was not clicked. Remove: the note was present after each of the first five removals, then stayed gone on the sixth and seventh. The ten-second recovery was not waited out in the browser. The budget rule is also covered by an automated test. |
-| `unusual-css.html` | The page stylesheet tries to hide the note and the red mark. The note should still be readable, because the extension sets its own inline styles. An element placed on top of the note is not part of this page and can still cover it. | The note stayed `display: block`, `visibility: visible`, and `opacity: 1`. It was not screenshotted. A covering element was not tried. |
-| `http-form-action.html` over `http://` | A warned field plus the insecure-connection note when that field is focused or the form is submitted. | Not run in the browser. |
-| `suspicious-looking.html` | Ordinary field stays quiet even if the page looks alarming. | Not run in the browser. |
+| Page | What is asserted |
+| --- | --- |
+| `ssn.html` | SSN field marked; comments box quiet; field's accessible name is just its label; description carries the reminder; buttons named "Show what you typed in this field", "Why am I seeing this?" (with expanded state), "Dismiss this reminder" |
+| `misleading-context.html` | No field marked although the page text talks about SSNs, cards, and bank accounts |
+| `dynamic.html`, `spa.html` | Added and redrawn fields get reminders |
+| `perf/lazy-components.html` | Fields in open and closed shadow roots of custom elements get reminders; no focus is taken |
+| `masking.html` | SSN, card, and bank show dots; email, comments, and password untouched; Show and Hide work by mouse and by keyboard (Tab from the field, Enter); Dismiss removes note, outline, and dots; value unchanged |
+| `validation.html` | Paste works; the browser's `pattern` check still blocks an invalid value; a script fill (as autofill does) stays masked; the site receives exactly the entered value and the pressed button |
+| `perf/react-app.html` | React controlled inputs keep their state while masked; route changes get reminders |
+| `long-page.html` over http | Site note appears next to the field, not at the top of the page; a paused submit brings it into view with focus; Continue Anyway sends the pressed button's value |
+| `perf/hostile.html`, `covered.html`, `unusual-css.html` | Repairs stop after five in a burst; toolbar badge "!" and popup notice when a note is removed or covered; page CSS cannot hide the note |
+| `frames.html` | The popup summary describes the top page; the frame gets its own reminders |
+| Settings | Off survives a service-worker stop, reloads, a new tab, five toggles, and a full browser restart; switch keeps keyboard focus |
+| `privacy-probe.html` | No value-reading, clipboard, input-listener, or network API is used by the extension; messages carry no typed value; storage holds only the on/off boolean |
+| Release ZIP | Unzipped package loads, marks a field, the popup renders without errors, and the packaged worker saves the switch |
 
-## Settings and more than one tab
+## Still to do by hand, in branded Chrome, before submission
 
-1. Turn protection off in the popup. The status becomes "Unable to determine" and the page reminders disappear.
-2. Refresh the page. Protection stays off.
-3. Open a second http page in another tab. Protection stays off there too.
-4. Quit Chrome, open it again, and return to an http fixture. Protection stays off.
-5. On `chrome://extensions`, click the extension's service worker link so Chrome stops or restarts that script, then reopen the popup. Protection stays off.
-6. Turn protection on. Reminders return on the fixture, including a tab that was already open.
-7. Remove the extension. The saved choice is deleted with it.
+1. Load the release ZIP (not the source folder) with Load unpacked.
+2. Click the real toolbar button and read the popup on `ssn.html`, on `chrome://extensions`, and on a
+   page with the protection switch off. The automated tests open `popup.html` in a tab instead.
+3. On `masking.html`, use Chrome's own address autofill and card autofill (with test entries) and
+   confirm the fields still fill and stay masked.
+4. With a password manager installed, confirm it does not offer to save the SSN or card number.
+5. Screen reader pass (NVDA on Windows or VoiceOver on macOS): focus the SSN field and confirm the
+   label and reminder are read; Tab to Show, Why, and Dismiss; open the popup and toggle the switch.
+6. At 200% browser zoom and with a large default font, confirm notes wrap and nothing overlaps.
+7. Windows High Contrast (forced colors): confirm note borders and buttons stay visible.
+8. Remove the extension and confirm the saved choice is gone when it is installed again.
 
-What was actually done, on a temporary Chrome profile, by setting the saved boolean directly rather than clicking the popup:
+The store screenshots are captured automatically (`npm run store-assets`, see
+[CHROME_WEB_STORE_CHECKLIST.md](../CHROME_WEB_STORE_CHECKLIST.md)). Replace them by hand only if this
+session shows something they do not.
 
-- Turning the saved choice off removed the note on the open page. Reloading left it off.
-- A second tab opened while protection was off also had no note.
-- Closing the service worker and letting Chrome start it again left the saved choice off, and the reloaded page still had no note.
-- Quitting Chrome and opening the same profile again kept the choice off. The Social Security page had no note until the choice was set back on. The note then returned, with the Social Security sentence above.
+## Earlier hand checks (October 25, 2026, Chrome 156)
 
-Not done: clicking the toolbar popup, using the service-worker link on `chrome://extensions`, or removing the extension to confirm Chrome deletes the saved choice. The popup's own words were not read off the screen.
+Recorded before this audit: password, registration, payment, SSN, email/phone, comment, dynamic, and
+SPA pages behaved as listed; the note on `unusual-css.html` stayed visible; repairs stopped after five
+quick removals; the saved off choice survived a worker restart and a full quit. The toolbar popup, the
+insecure-connection page, and the suspicious-looking page were not checked by hand then.
 
 ## Known misses and extra warnings
 
-These come from the field rules, and `tests/scenarios.test.ts` locks them in:
-
-- Text near a field is not enough. A search box does not warn just because the paragraph beside it mentions a Social Security number.
-- "Social" alone, and "Mother's maiden name", stay quiet.
-- A label that says "Account number" warns as a bank account, even when it might be a loyalty or utility account. That is a known extra warning.
-- The word "pan" by itself is treated as a card number.
-- A password box warns from its type, even when the label is vague.
-- Fields inside a cross-origin frame are invisible to the parent page. A frame gets its own reminder only when that frame's address is `http` or `https`.
-- `chrome://` pages, the Chrome Web Store, PDFs, and `file://` pages do not get a content script. The popup says "Unable to determine".
+See [DETECTION_ACCURACY.md](../DETECTION_ACCURACY.md). In short: nearby text alone never warns; a bare
+"Account number" warns as a bank account; "PAN" warns as a card number; sign-in codes and security
+questions stay quiet; search boxes and drop-downs never get number warnings; cross-origin frames get
+their own reminders only when their address is http or https; `chrome://` pages, the Chrome Web Store,
+PDFs, and `file://` pages get no content script.
 
 ## What not to expect
 
-A site that covers the reminder with another element, or that keeps deleting it, can hide it. The extension puts a removed note back at most five times in ten seconds, then waits. It does not promise to win against a site that is trying to hide the note.
+A site that covers the reminder with an element that lets clicks through, hides it through a parent
+element, or keeps deleting it can hide it. The extension puts a removed note back at most five times in
+ten seconds, then marks the toolbar button. It does not promise to win against a site that is trying
+to hide the note.

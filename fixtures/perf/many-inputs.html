@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Hundreds of inputs</title>
+    <link rel="stylesheet" href="../common.css" />
+  </head>
+  <body>
+    <h1>Six hundred inputs</h1>
+    <p class="note">A stress page. One field in six has a sensitive label.</p>
+    <form id="form" action="#many" method="get"></form>
+    <script>
+      var labels = ["Item name", "Quantity", "Comment", "Card number", "Notes", "Color"];
+      var form = document.getElementById("form");
+      for (var i = 0; i < 600; i += 1) {
+        var label = document.createElement("label");
+        label.appendChild(document.createTextNode(labels[i % labels.length] + " " + i + " "));
+        var input = document.createElement("input");
+        input.name = "field_" + i;
+        input.id = "field_" + i;
+        label.appendChild(input);
+        form.appendChild(label);
+      }
+    </script>
+  </body>
+</html>

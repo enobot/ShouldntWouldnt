@@ -2,6 +2,11 @@
   box-shadow: inset 0 0 0 1px #9f1239, 0 0 0 1px #9f1239 !important;
 }
 
+/* Visual masking only. The field's value, type, and submission are unchanged. */
+[data-shouldnt-wouldnt-mask="on"] {
+  -webkit-text-security: disc !important;
+}
+
 .shouldnt-wouldnt-host {
   display: block;
   margin: 4px 0 8px;

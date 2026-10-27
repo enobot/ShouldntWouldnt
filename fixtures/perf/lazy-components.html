@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Components that load later</title>
+    <link rel="stylesheet" href="../common.css" />
+  </head>
+  <body>
+    <h1>Components that load later</h1>
+    <p class="note">
+      Ten form sections arrive 100 milliseconds apart. Two of them are custom elements: one with an open shadow root,
+      one with a closed shadow root.
+    </p>
+    <div id="slots"></div>
+    <script>
+      class OpenCard extends HTMLElement {
+        connectedCallback() {
+          var root = this.attachShadow({ mode: "open" });
+          var label = document.createElement("label");
+          label.textContent = "Passport number ";
+          var input = document.createElement("input");
+          input.id = "open-passport";
+          input.name = "passport";
+          label.appendChild(input);
+          root.appendChild(label);
+        }
+      }
+      class ClosedCard extends HTMLElement {
+        connectedCallback() {
+          var root = this.attachShadow({ mode: "closed" });
+          var label = document.createElement("label");
+          label.textContent = "Routing number ";
+          var input = document.createElement("input");
+          input.id = "closed-routing";
+          input.name = "routing";
+          label.appendChild(input);
+          root.appendChild(label);
+        }
+      }
+      customElements.define("open-card", OpenCard);
+      customElements.define("closed-card", ClosedCard);
+
+      var sections = [
+        ["Contact", [["Email", "email", "email"], ["Phone", "tel", "tel"]]],
+        ["Identity", [["Social Security number", "text", ""], ["Date of birth", "text", "bday"]]],
+        ["Open shadow", "open-card"],
+        ["Preferences", [["Favorite color", "text", ""], ["Comments", "text", ""]]],
+        ["Payment", [["Card number", "text", "cc-number"], ["Security code", "text", "cc-csc"]]],
+        ["Closed shadow", "closed-card"],
+        ["Shipping", [["Street address", "text", "street-address"], ["City", "text", "address-level2"]]],
+        ["Login", [["Username", "text", "username"], ["Password", "password", "current-password"]]],
+        ["Search", [["Search the site", "search", ""]]],
+        ["Bank", [["Bank account number", "text", ""], ["Account holder", "text", ""]]],
+      ];
+      var slots = document.getElementById("slots");
+      sections.forEach(function (section, index) {
+        setTimeout(function () {
+          var box = document.createElement("section");
+          var heading = document.createElement("h2");
+          heading.textContent = section[0];
+          box.appendChild(heading);
+          if (typeof section[1] === "string") {
+            box.appendChild(document.createElement(section[1]));
+          } else {
+            var form = document.createElement("form");
+            form.action = "#" + index;
+            section[1].forEach(function (spec) {
+              var label = document.createElement("label");
+              label.appendChild(document.createTextNode(spec[0] + " "));
+              var input = document.createElement("input");
+              input.type = spec[1];
+              if (spec[2]) input.setAttribute("autocomplete", spec[2]);
+              input.name = spec[0].toLowerCase().replace(/\W+/g, "_");
+              label.appendChild(input);
+              form.appendChild(label);
+            });
+            box.appendChild(form);
+          }
+          slots.appendChild(box);
+          if (index === sections.length - 1) document.documentElement.setAttribute("data-lazy-done", "1");
+        }, 100 * (index + 1));
+      });
+    </script>
+  </body>
+</html>

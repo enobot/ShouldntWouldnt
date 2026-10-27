@@ -25,6 +25,14 @@ describe("local site signals", () => {
     assert.deepEqual(concerns(`https://${mixed}/`, mixed), ["lookalike"]);
   });
 
+  test("country sites of a brand are not lookalikes", () => {
+    assert.deepEqual(concerns("https://www.amazon.com.au/", "www.amazon.com.au"), []);
+    assert.deepEqual(concerns("https://www.google.com.br/", "www.google.com.br"), []);
+    assert.deepEqual(concerns("https://amazon.com.mx/", "amazon.com.mx"), []);
+    assert.deepEqual(concerns("https://amazon.com.evil.example/", "amazon.com.evil.example"), ["lookalike"]);
+    assert.deepEqual(concerns("https://paypal.com.secure-login.xyz/", "paypal.com.secure-login.xyz"), ["lookalike"]);
+  });
+
   test("punycode matches Node for the labels we decode", () => {
     for (const host of ["xn--e1afmkfd.xn--p1ai", "paypal.com", "xn--80ak6aa92e.com"]) {
       assert.equal(unicodeHostname(host), domainToUnicode(host).toLowerCase());

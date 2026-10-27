@@ -16,13 +16,24 @@ Form analysis happens locally in your browser. To decide whether to show a remin
 
 - the kind of control (for example, a password box, an email box, or a text box)
 - the field's `name`, `id`, autocomplete token, and placeholder
-- the label and other short descriptive text next to the field
+- the label and other short descriptive text next to the field (text inside form controls, drop-down
+  options, and editable areas such as rich-text boxes is skipped)
 - the page's hostname and whether the address starts with `http` or `https`
 - the `action` attribute of a form that already contains a field the extension has warned about
 
 It uses those details to recognize requests for information such as a Social Security number, payment card, bank account, password, government ID, email address, phone number, street address, or date of birth. It also looks locally for an insecure connection and for a hostname that is a close lookalike of a well-known name. Many deceptive names are missed on purpose. The extension does not ask a reputation service whether a site is safe.
 
 The toolbar popup shows the hostname, the connection scheme, two counts, and a short status. Those details stay in the popup while it is open. They are not written to a list of sites you have visited.
+
+The Chrome Web Store asks developers to declare data an extension handles even when it never leaves the device. For this extension, that is website content: the field details and page address listed above, examined on your computer to decide whether to show a reminder. They are not stored, not sent to the developer or anyone else, not sold, and not used for any other purpose.
+
+## Hiding characters on screen
+
+For fields that appear to ask for a Social Security number, card number, bank account or routing number, government ID, passport, or driver's license, the extension draws the characters you type as dots, using a browser display setting on that field. A Show button in the reminder reveals them, and Hide covers them again. This changes only what your screen shows. The extension does not read, copy, or store what you type to do this, and the website still receives exactly what you enter.
+
+## When a page hides a reminder
+
+If a page keeps removing a reminder, or covers one, the extension marks its toolbar button with "!" for that tab and the popup says so. The page's content script tells the extension's background script only that this happened. No page address, field, or typed text is included. The mark is cleared when that page goes away.
 
 ## What is saved
 
@@ -34,7 +45,9 @@ Until you dismiss it, a reminder stays on the page. A dismissal lasts until that
 
 ## What it does not do
 
-We don't read what you type into forms. The extension does not read field values, form data, keystrokes, clipboard contents, or the text inside a comment box.
+We don't read what you type into forms. The extension does not read field values, form data, keystrokes, clipboard contents, the text inside a comment box, or text typed into an editable area of a page.
+
+One limit, stated plainly: a few websites repeat what you typed in their own page text, for example in an error message next to the field. If a field points to such a message as its description, the extension may read that page text when it looks at the field again. It is used only on your computer to match words such as "card number", and it is never saved or sent.
 
 We don't collect, save, share, or sell your personal information. Local review of field labels is not a copy kept by the developer. This version does not save Social Security numbers, passwords, credit card numbers, or anything else entered into a form.
 
@@ -61,7 +74,8 @@ The extension is a reminder for adults, including parents. It is not a children'
 ## How long information stays
 
 - The on/off setting remains until you change it or remove the extension.
-- A dismissed reminder and the stronger site note are discarded when the page closes.
+- A dismissed reminder, a Show or Hide choice, and the stronger site note are discarded when the page closes.
+- The toolbar "!" mark is cleared when the page that hid a reminder goes away, or when the tab closes.
 - Nothing is sent to the developer, so there is no developer copy to delete. To delete the saved setting, turn protection on again or remove the extension in `chrome://extensions`.
 
 ## Chrome Web Store limited use

@@ -1,19 +1,34 @@
-import { concernLines, fieldCopy, moreInformation, whyText } from "../shared/copy.js";
+import {
+  concernLines,
+  fieldCopy,
+  fieldDescription,
+  HIDE_LABEL,
+  HIDE_NAME,
+  moreInformation,
+  SHOW_LABEL,
+  SHOW_NAME,
+  whyText,
+} from "../shared/copy.js";
 import { responseToWarning, shouldOfferStrongWarning, shouldPauseSubmit } from "../shared/decisions.js";
 import { classifyField } from "../shared/detect.js";
 import { FieldBook } from "../shared/ledger.js";
-import { parseEnabledState, parseIncoming } from "../shared/messages.js";
+import { shouldMask } from "../shared/masking.js";
+import { parseIncoming } from "../shared/messages.js";
 import { PROTECTION_STORAGE_KEY, protectionFromStored } from "../shared/protection.js";
 import { consumeRepair, freshRepairBudget, type RepairBudget } from "../shared/reminder-guard.js";
 import { collectConcerns } from "../shared/signals.js";
 import { statusFor } from "../shared/status.js";
 import type { PageSummary } from "../shared/messages.js";
 import type { ConcernKind, WarnCategory } from "../shared/types.js";
-import { extractField, isFieldElement } from "./metadata.js";
-import { hostMutationIsOurs, mountPanel, mountWarning, paintHost, type WarningNodes } from "./warning-view.js";
+import { extractField, isFieldElement, withLabelIndex } from "./metadata.js";
+import { hostMutationIsOurs, mountPanel, mountWarning, paintHost, setRevealState, type WarningNodes } from "./warning-view.js";
 
 const MARK = "data-shouldnt-wouldnt";
+const MASK = "data-shouldnt-wouldnt-mask";
 const MARK_SHADOW = "inset 0 0 0 1px #9f1239, 0 0 0 1px #9f1239";
+const TEXT_SECURITY = "-webkit-text-security";
+const REVEAL_LABELS = { show: SHOW_LABEL, hide: HIDE_LABEL, showName: SHOW_NAME, hideName: HIDE_NAME };
+const FLOW_DISPLAYS = new Set(["block", "flow-root", "list-item"]);
 const OBSERVE: MutationObserverInit = {
   childList: true,
   subtree: true,
@@ -32,20 +47,33 @@ const OBSERVE: MutationObserverInit = {
   ],
 };
 
+type Field = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+
 interface FieldView extends WarningNodes {
   host: HTMLElement;
+  anchor: Element;
+  category: WarnCategory;
+  maskable: boolean;
+  revealed: boolean;
+  shownReveal: boolean | null;
   repairs: RepairBudget;
   watcher: MutationObserver | null;
 }
 
-interface SavedShadow {
-  shadow: string;
+interface SavedStyle {
+  text: string;
   priority: string;
+}
+
+interface SavedField {
+  shadow: SavedStyle | null;
+  security: SavedStyle | null;
+  description: string | null;
 }
 
 const book = new FieldBook<HTMLElement>();
 const views = new Map<HTMLElement, FieldView>();
-const savedShadows = new WeakMap<HTMLElement, SavedShadow | null>();
+const saved = new WeakMap<HTMLElement, SavedField>();
 const ours = new WeakSet<Node>();
 const selfMoved = new WeakSet<Node>();
 const watchedShadows = new WeakSet<ShadowRoot>();
@@ -56,9 +84,12 @@ let running = false;
 let acknowledged = false;
 let focusShown = false;
 let pausedForm: HTMLFormElement | null = null;
+let pausedSubmitter: HTMLElement | null = null;
 let panelHost: HTMLElement | null = null;
+let panelNode: HTMLDivElement | null = null;
 let panelLines: HTMLDivElement | null = null;
 let panelMore: HTMLParagraphElement | null = null;
+let panelAfter: Element | null = null;
 let panelRepairs: RepairBudget = freshRepairBudget();
 let panelWatcher: MutationObserver | null = null;
 let panelStyleQueued = false;
@@ -66,13 +97,30 @@ let queued: MutationRecord[] = [];
 let flushTimer = 0;
 let rootObserver: MutationObserver | null = null;
 let booted = false;
+let concernCache: ConcernKind[] | null = null;
+let concernKey = "";
+let reminderHidden = false;
 
-function send(message: unknown): Promise<unknown> {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(message, (response) => {
+function send(message: unknown): void {
+  try {
+    chrome.runtime.sendMessage(message, () => {
       void chrome.runtime.lastError;
-      resolve(response);
     });
+  } catch {
+    // The extension was reloaded or removed while this page stayed open.
+  }
+}
+
+function readEnabled(): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      chrome.storage.local.get(PROTECTION_STORAGE_KEY, (items) => {
+        void chrome.runtime.lastError;
+        resolve(protectionFromStored(items?.[PROTECTION_STORAGE_KEY]));
+      });
+    } catch {
+      resolve(protectionFromStored(undefined));
+    }
   });
 }
 
@@ -82,7 +130,7 @@ function schemeOf(protocol: string): "http" | "https" | "other" {
   return "other";
 }
 
-function concernsNow(): ConcernKind[] {
+function computeConcerns(): ConcernKind[] {
   const actions: Array<string | null> = [];
   const seen = new Set<HTMLFormElement>();
   for (const field of book.activeItems()) {
@@ -99,66 +147,129 @@ function concernsNow(): ConcernKind[] {
   });
 }
 
+/** Site concerns for this batch. Cleared when a batch of fields has been handled. */
+function concernsNow(): ConcernKind[] {
+  concernCache ??= computeConcerns();
+  return concernCache;
+}
+
+function freshConcerns(): ConcernKind[] {
+  concernCache = null;
+  const concerns = concernsNow();
+  concernCache = null;
+  return concerns;
+}
+
 function buildSummary(): PageSummary {
-  const protection = running;
-  if (!protection) {
-    return {
-      ok: true,
-      protection: false,
-      hostname: location.hostname,
-      scheme: schemeOf(location.protocol),
-      sensitiveCount: null,
-      concernCount: null,
-      status: "unable",
-    };
-  }
-  const sensitiveCount = book.activeItems().filter((field) => field.isConnected).length;
-  const concernCount = concernsNow().length;
-  return {
-    ok: true,
-    protection: true,
+  const base = {
+    ok: true as const,
     hostname: location.hostname,
     scheme: schemeOf(location.protocol),
+  };
+  if (!running) {
+    return { ...base, protection: false, sensitiveCount: null, concernCount: null, status: "unable", reminderHidden: false };
+  }
+  const sensitiveCount = book.activeItems().filter((field) => field.isConnected).length;
+  const concernCount = freshConcerns().length;
+  return {
+    ...base,
+    protection: true,
     sensitiveCount,
     concernCount,
-    status: statusFor({
-      protectionOn: true,
-      scannable: true,
-      sensitiveCount,
-      concernCount,
-    }),
+    status: statusFor({ protectionOn: true, scannable: true, sensitiveCount, concernCount }),
+    reminderHidden,
   };
 }
 
-function markField(field: HTMLElement): void {
-  if (!savedShadows.has(field)) {
-    const shadow = field.style.getPropertyValue("box-shadow");
-    const priority = field.style.getPropertyPriority("box-shadow");
-    savedShadows.set(field, shadow ? { shadow, priority } : null);
+function readInline(field: HTMLElement, name: string): SavedStyle | null {
+  const text = field.style.getPropertyValue(name);
+  return text ? { text, priority: field.style.getPropertyPriority(name) } : null;
+}
+
+function restoreInline(field: HTMLElement, name: string, previous: SavedStyle | null): void {
+  if (previous) field.style.setProperty(name, previous.text, previous.priority);
+  else field.style.removeProperty(name);
+}
+
+function setInline(field: HTMLElement, name: string, value: string): void {
+  if (field.style.getPropertyValue(name) === value && field.style.getPropertyPriority(name) === "important") return;
+  field.style.setProperty(name, value, "important");
+}
+
+function setAttr(field: HTMLElement, name: string, value: string): void {
+  if (field.getAttribute(name) !== value) field.setAttribute(name, value);
+}
+
+function savedFor(field: HTMLElement): SavedField {
+  let entry = saved.get(field);
+  if (!entry) {
+    entry = {
+      shadow: readInline(field, "box-shadow"),
+      security: readInline(field, TEXT_SECURITY),
+      description: field.getAttribute("aria-description"),
+    };
+    saved.set(field, entry);
   }
-  field.setAttribute(MARK, "marked");
-  field.style.setProperty("box-shadow", MARK_SHADOW, "important");
+  return entry;
+}
+
+function markField(field: HTMLElement, description: string): void {
+  savedFor(field);
+  setAttr(field, MARK, "marked");
+  setInline(field, "box-shadow", MARK_SHADOW);
+  setAttr(field, "aria-description", description);
+}
+
+/** Visual masking only: a CSS property on the field. The value is never read or copied. */
+function applyMask(field: HTMLElement, on: boolean): void {
+  const entry = savedFor(field);
+  if (on) {
+    setAttr(field, MASK, "on");
+    setInline(field, TEXT_SECURITY, "disc");
+    return;
+  }
+  field.removeAttribute(MASK);
+  restoreInline(field, TEXT_SECURITY, entry.security);
 }
 
 function unmarkField(field: HTMLElement): void {
   field.removeAttribute(MARK);
-  if (!savedShadows.has(field)) return;
-  const previous = savedShadows.get(field);
-  if (previous && previous.shadow) field.style.setProperty("box-shadow", previous.shadow, previous.priority);
-  else field.style.removeProperty("box-shadow");
-  savedShadows.delete(field);
+  field.removeAttribute(MASK);
+  const entry = saved.get(field);
+  if (!entry) return;
+  restoreInline(field, "box-shadow", entry.shadow);
+  restoreInline(field, TEXT_SECURITY, entry.security);
+  if (entry.description === null) field.removeAttribute("aria-description");
+  else field.setAttribute("aria-description", entry.description);
+  saved.delete(field);
 }
 
 function noteSelfMove(host: HTMLElement): void {
   if (host.isConnected) selfMoved.add(host);
 }
 
-function placeAfter(field: HTMLElement, host: HTMLElement): void {
-  const parent = field.parentNode;
+function placeAfter(anchor: Element, host: HTMLElement): void {
+  const parent = anchor.parentNode;
   if (!parent) return;
   noteSelfMove(host);
-  if (field.nextSibling) parent.insertBefore(host, field.nextSibling);
-  else parent.appendChild(host);
+  parent.insertBefore(host, anchor.nextSibling);
+}
+
+/**
+ * Where a note goes. After the field's own label when that label sits in ordinary block flow, so
+ * the note is not read as part of the field's name. Inside the label, right after the field, when
+ * the label is one item of a flex or grid row, so the row keeps its shape.
+ */
+function anchorFor(field: HTMLElement): Element {
+  const label = field.closest("label");
+  if (!label || label.querySelectorAll("input, textarea, select").length !== 1) return field;
+  const parent = label.parentElement;
+  if (!parent) return field;
+  return FLOW_DISPLAYS.has(getComputedStyle(parent).display) ? label : field;
+}
+
+function anchorStillFits(view: FieldView, field: HTMLElement): boolean {
+  return view.anchor.isConnected && (view.anchor === field || view.anchor.contains(field));
 }
 
 function takeSelfMove(node: Node): boolean {
@@ -211,31 +322,66 @@ function clearUi(field: HTMLElement): void {
   views.delete(field);
 }
 
-function showFieldWarning(field: HTMLElement, category: WarnCategory): void {
+function setText(node: HTMLElement, text: string): void {
+  if (node.textContent !== text) node.textContent = text;
+}
+
+function refreshView(field: HTMLElement, view: FieldView): void {
   const concerns = concernsNow();
-  const copy = fieldCopy(category);
-  const because = whyText(category, concerns);
+  const masked = view.maskable && !view.revealed;
+  setText(view.message, fieldCopy(view.category));
+  setText(view.why, whyText(view.category, concerns, view.maskable));
+  markField(field, fieldDescription(view.category, concerns));
+  applyMask(field, masked);
+  if (view.revealButton.hidden === view.maskable) view.revealButton.hidden = !view.maskable;
+  if (view.maskable && view.shownReveal !== view.revealed) {
+    setRevealState(view.revealButton, view.revealed, REVEAL_LABELS);
+    view.shownReveal = view.revealed;
+  }
+}
+
+function showFieldWarning(field: Field, category: WarnCategory, anchor: Element): void {
+  const maskable = shouldMask(category, field.tagName, field instanceof HTMLInputElement ? field.type : field.tagName);
   let view = views.get(field);
   if (!view) {
     const host = document.createElement("div");
     paintHost(host);
     ours.add(host);
     const shadow = host.attachShadow({ mode: "closed" });
-    const nodes = mountWarning(shadow, copy, because);
+    const nodes = mountWarning(shadow, fieldCopy(category), whyText(category, concernsNow(), maskable));
+    const created: FieldView = {
+      host,
+      anchor,
+      category,
+      maskable,
+      revealed: false,
+      shownReveal: null,
+      repairs: freshRepairBudget(),
+      watcher: null,
+      ...nodes,
+    };
     nodes.dismissButton.addEventListener("click", () => {
       clearUi(field);
       book.dismiss(field);
     });
-    view = { host, repairs: freshRepairBudget(), watcher: null, ...nodes };
+    nodes.revealButton.addEventListener("click", () => {
+      created.revealed = !created.revealed;
+      concernCache = null;
+      refreshView(field, created);
+      concernCache = null;
+    });
+    view = created;
     views.set(field, view);
-    placeAfter(field, host);
+    placeAfter(anchor, host);
     armFieldWatcher(field, view);
-  } else if (!view.host.isConnected || field.nextElementSibling !== view.host) {
-    restoreFieldReminder(field, "move");
+  } else {
+    if (view.category !== category) view.revealed = false;
+    view.category = category;
+    view.maskable = maskable;
+    if (!anchorStillFits(view, field)) view.anchor = anchor;
+    if (!view.host.isConnected || view.anchor.nextElementSibling !== view.host) restoreFieldReminder(field, "move");
   }
-  view.message.textContent = copy;
-  view.why.textContent = because;
-  markField(field);
+  refreshView(field, view);
 }
 
 function hidePanel(): void {
@@ -247,14 +393,30 @@ function hidePanel(): void {
     panelHost.remove();
   }
   panelHost = null;
+  panelNode = null;
   panelLines = null;
   panelMore = null;
+  panelAfter = null;
 }
 
-function showPanel(concerns: ConcernKind[]): void {
+/** The panel goes right after the warned field's note, so it shows up where the person is looking. */
+function panelSpot(field: HTMLElement): Element {
+  const view = views.get(field);
+  if (view?.host.isConnected) return view.host;
+  return view?.anchor.isConnected ? view.anchor : field;
+}
+
+function panelMisplaced(): boolean {
+  if (!panelHost) return false;
+  if (!panelHost.isConnected) return true;
+  return !!panelAfter && panelAfter.isConnected && panelAfter.nextElementSibling !== panelHost;
+}
+
+function showPanel(concerns: ConcernKind[], near: HTMLElement): void {
   if (concerns.length === 0) return;
   const lines = concernLines(concerns);
   const more = moreInformation(concerns);
+  panelAfter = panelSpot(near);
   if (!panelHost || !panelLines || !panelMore) {
     panelHost = document.createElement("div");
     paintHost(panelHost);
@@ -265,18 +427,15 @@ function showPanel(concerns: ConcernKind[]): void {
       continueAnyway: () => respond("continue"),
       more: () => undefined,
     });
+    panelNode = mounted.panel;
     panelLines = mounted.linesHost;
     panelMore = mounted.more;
     panelRepairs = freshRepairBudget();
-    const parent = document.body ?? document.documentElement;
-    noteSelfMove(panelHost);
-    parent.insertBefore(panelHost, parent.firstChild);
+    placeAfter(panelAfter, panelHost);
     armPanelWatcher(panelHost);
     return;
   }
-  if (!panelHost.isConnected || (document.body ?? document.documentElement).firstElementChild !== panelHost) {
-    restorePanel("move");
-  }
+  if (panelMisplaced()) restorePanel("move");
   panelLines.replaceChildren();
   for (const line of lines) {
     const paragraph = document.createElement("p");
@@ -290,10 +449,31 @@ function respond(action: "go-back" | "continue" | "more"): void {
   const decision = responseToWarning(action);
   if (decision.acknowledge) acknowledged = true;
   const form = pausedForm;
-  if (!decision.resumeSubmit) pausedForm = null;
+  const submitter = pausedSubmitter;
+  const returnTo = panelAfter;
+  if (!decision.resumeSubmit) {
+    pausedForm = null;
+    pausedSubmitter = null;
+  }
   hidePanel();
+  if (action === "go-back" && form) {
+    const target = submitter?.isConnected ? submitter : returnTo instanceof HTMLElement ? returnTo : null;
+    target?.focus({ preventScroll: true });
+  }
   if (decision.resumeSubmit && form && form.isConnected) {
     pausedForm = null;
+    pausedSubmitter = null;
+    resumeSubmit(form, submitter);
+  }
+}
+
+/** Continues the form with the button the person pressed, so forms with several submit buttons keep working. */
+function resumeSubmit(form: HTMLFormElement, submitter: HTMLElement | null): void {
+  const usable =
+    submitter && submitter.isConnected && (submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement) && submitter.form === form;
+  try {
+    form.requestSubmit(usable ? submitter : undefined);
+  } catch {
     try {
       form.requestSubmit();
     } catch {
@@ -311,51 +491,100 @@ function insideOurs(el: Node): boolean {
   return false;
 }
 
-function consider(field: HTMLElement): void {
-  if (!running || insideOurs(field)) return;
-  const snapshot = extractField(field);
-  const detection = snapshot ? classifyField(snapshot) : null;
-  if (!snapshot || !detection?.warn || detection.category === "none") {
-    clearUi(field);
-    book.release(field);
-    return;
+interface Pending {
+  field: Field;
+  category: WarnCategory;
+  anchor: Element;
+}
+
+/**
+ * Classifies a set of fields, then changes the page. Reads come first and writes second, so
+ * a batch costs at most one style pass for placement instead of one per field.
+ */
+function considerAll(fields: Iterable<HTMLElement>): void {
+  if (!running) return;
+  const pending: Pending[] = [];
+  withLabelIndex(() => {
+    for (const field of fields) {
+      if (!isFieldElement(field) || !field.isConnected || insideOurs(field)) continue;
+      const snapshot = extractField(field);
+      const detection = snapshot ? classifyField(snapshot) : null;
+      if (!snapshot || !detection?.warn || detection.category === "none") {
+        clearUi(field);
+        book.release(field);
+        continue;
+      }
+      if (book.claim(field) === "dismissed") continue;
+      const view = views.get(field);
+      const anchor = view && anchorStillFits(view, field) ? view.anchor : anchorFor(field);
+      pending.push({ field, category: detection.category, anchor });
+    }
+  });
+  concernCache = null;
+  for (const item of pending) showFieldWarning(item.field, item.category, item.anchor);
+  const key = concernsNow().join(",");
+  if (key !== concernKey) {
+    concernKey = key;
+    for (const [field, view] of views) refreshView(field, view);
   }
-  const claim = book.claim(field);
-  if (claim === "dismissed") return;
-  showFieldWarning(field, detection.category);
+  concernCache = null;
 }
 
 function closedShadow(el: Element): ShadowRoot | null {
-  if (!(el instanceof HTMLElement) || !chrome.dom?.openOrClosedShadowRoot) return null;
+  if (!chrome.dom?.openOrClosedShadowRoot) return null;
   try {
-    const root = chrome.dom.openOrClosedShadowRoot(el);
+    const root = chrome.dom.openOrClosedShadowRoot(el as HTMLElement);
     return root instanceof ShadowRoot ? root : null;
   } catch {
     return null;
   }
 }
 
-function watchShadow(el: Element): void {
-  if (ours.has(el)) return;
-  const shadow = el.shadowRoot ?? closedShadow(el);
-  if (!shadow || watchedShadows.has(shadow)) return;
+/**
+ * Open shadow roots are visible on every element. Closed ones are looked up only on custom
+ * elements, where component libraries put them, because asking for every element is slow on large
+ * pages. A closed root attached to a plain built-in element is therefore not scanned.
+ */
+function shadowOf(el: Element): ShadowRoot | null {
+  if (ours.has(el)) return null;
+  if (el.shadowRoot) return el.shadowRoot;
+  return el.localName.includes("-") ? closedShadow(el) : null;
+}
+
+function watchShadow(shadow: ShadowRoot, found: HTMLElement[]): void {
+  if (watchedShadows.has(shadow)) return;
   watchedShadows.add(shadow);
   const observer = new MutationObserver((records) => queue(records));
   observer.observe(shadow, OBSERVE);
   shadowObservers.push(observer);
-  scanContainer(shadow);
+  collect(shadow, found);
 }
 
-function scanContainer(container: ParentNode): void {
-  if (container instanceof Element && insideOurs(container)) return;
-  if (container instanceof Element && isFieldElement(container)) consider(container);
-  container.querySelectorAll("input, textarea, select").forEach((el) => {
-    if (el instanceof HTMLElement) consider(el);
+/** One walk over a subtree: fields to classify, and shadow roots to watch. */
+function collect(container: ParentNode, found: HTMLElement[]): void {
+  if (container instanceof Element) {
+    if (insideOurs(container)) return;
+    if (isFieldElement(container)) found.push(container);
+    const own = shadowOf(container);
+    if (own) watchShadow(own, found);
+  }
+  const walker = document.createTreeWalker(container as Node, NodeFilter.SHOW_ELEMENT, {
+    acceptNode(node) {
+      return ours.has(node) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+    },
   });
-  if (container instanceof Element) watchShadow(container);
-  container.querySelectorAll("*").forEach((el) => {
-    if (el instanceof Element) watchShadow(el);
-  });
+  while (walker.nextNode()) {
+    const el = walker.currentNode as Element;
+    if (isFieldElement(el)) found.push(el);
+    const shadow = shadowOf(el);
+    if (shadow) watchShadow(shadow, found);
+  }
+}
+
+function scanContainers(containers: Iterable<ParentNode>): void {
+  const found: HTMLElement[] = [];
+  for (const container of containers) collect(container, found);
+  considerAll(found);
 }
 
 function cleanupRemoved(node: Node): void {
@@ -387,37 +616,58 @@ function eachReminderHost(node: Node, visit: (host: HTMLElement) => void): void 
   });
 }
 
+/**
+ * Tells the toolbar button that this page removed or covered a reminder, once per page. The badge
+ * lives outside the page, so the page cannot remove it. It clears when the page goes away.
+ */
+function noteReminderHidden(): void {
+  if (reminderHidden) return;
+  reminderHidden = true;
+  send({ type: "page/reminderHidden" });
+  window.addEventListener(
+    "pagehide",
+    () => {
+      send({ type: "page/left" });
+    },
+    { once: true },
+  );
+}
+
 function restoreFieldReminder(field: HTMLElement, reason: "move" | "style"): void {
   if (!running) return;
   const view = views.get(field);
   if (!view || !book.hasActive(field) || !field.isConnected) return;
-  const misplaced = !view.host.isConnected || field.nextElementSibling !== view.host;
+  if (!anchorStillFits(view, field)) view.anchor = anchorFor(field);
+  const misplaced = !view.host.isConnected || view.anchor.nextElementSibling !== view.host;
   if (reason === "move" && !misplaced) return;
   const decision = consumeRepair(view.repairs, Date.now());
   view.repairs = decision.budget;
   if (!decision.allow) {
     view.watcher?.disconnect();
     view.watcher = null;
+    noteReminderHidden();
     return;
   }
-  if (misplaced) placeAfter(field, view.host);
+  if (misplaced) placeAfter(view.anchor, view.host);
   paintHost(view.host);
   if (!view.watcher) armFieldWatcher(field, view);
 }
 
 function restorePanel(reason: "move" | "style"): void {
   if (!running || !panelHost) return;
-  const parent = document.body ?? document.documentElement;
-  const misplaced = !panelHost.isConnected || parent.firstElementChild !== panelHost;
+  const misplaced = panelMisplaced();
   if (reason === "move" && !misplaced) return;
   const decision = consumeRepair(panelRepairs, Date.now());
   panelRepairs = decision.budget;
   if (!decision.allow) {
     panelWatcher?.disconnect();
     panelWatcher = null;
+    noteReminderHidden();
     return;
   }
-  if (misplaced) {
+  if (misplaced && panelAfter?.isConnected) placeAfter(panelAfter, panelHost);
+  else if (misplaced) {
+    const parent = document.body ?? document.documentElement;
     noteSelfMove(panelHost);
     parent.insertBefore(panelHost, parent.firstChild);
   }
@@ -449,19 +699,24 @@ function flush(): void {
   flushTimer = 0;
   const records = queued;
   queued = [];
-  const added: Element[] = [];
+  const changedFields = new Set<HTMLElement>();
+  const added = new Set<Element>();
   for (const record of records) {
     if (record.type === "attributes") {
       const target = record.target;
-      if (target instanceof HTMLElement && isFieldElement(target)) consider(target);
+      if (target instanceof HTMLElement && isFieldElement(target)) changedFields.add(target);
       continue;
     }
     record.addedNodes.forEach((node) => {
-      if (node instanceof Element && !ours.has(node)) added.push(node);
+      if (node instanceof Element && !ours.has(node)) added.add(node);
     });
     record.removedNodes.forEach((node) => handleRemoved(node));
   }
-  for (const el of added) scanContainer(el);
+  const found: HTMLElement[] = [...changedFields];
+  for (const el of added) {
+    if (el.isConnected) collect(el, found);
+  }
+  considerAll(new Set(found));
   const styleFields = [...styleRepairFields];
   styleRepairFields.clear();
   for (const field of styleFields) restoreFieldReminder(field, "style");
@@ -471,10 +726,34 @@ function flush(): void {
   }
 }
 
+/**
+ * When a warned field gets focus, checks once whether something on the page sits on top of its
+ * note. One hit test on focus, never in a loop. A cover that lets clicks pass through is missed.
+ */
+function checkCovered(field: HTMLElement): void {
+  const view = views.get(field);
+  if (!view?.host.isConnected || reminderHidden) return;
+  const rect = view.host.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    noteReminderHidden();
+    return;
+  }
+  // Only judge a note that is fully on screen, and only call it covered when two points agree.
+  if (rect.top < 0 || rect.left < 0 || rect.bottom > innerHeight || rect.right > innerWidth) return;
+  const y = rect.top + rect.height / 2;
+  const points = [rect.left + Math.min(20, rect.width / 4), rect.left + rect.width / 2];
+  const covered = points.every((x) => {
+    const top = document.elementFromPoint(x, y);
+    return !!top && top !== view.host && !view.host.contains(top);
+  });
+  if (covered) noteReminderHidden();
+}
+
 function onFocus(event: Event): void {
   const target = event.target;
   if (!(target instanceof HTMLElement) || !book.hasActive(target)) return;
-  const concerns = concernsNow();
+  checkCovered(target);
+  const concerns = freshConcerns();
   if (
     !shouldOfferStrongWarning({
       enabled: running,
@@ -488,19 +767,19 @@ function onFocus(event: Event): void {
     return;
   }
   focusShown = true;
-  showPanel(concerns);
+  showPanel(concerns, target);
 }
 
 function onSubmit(event: Event): void {
   const form = event.target;
   if (!(form instanceof HTMLFormElement)) return;
-  const formHasWarnedField = book.activeItems().some((field) => isFieldElement(field) && field.form === form);
-  const concerns = concernsNow();
+  const warned = book.activeItems().find((field) => isFieldElement(field) && field.form === form);
+  const concerns = freshConcerns();
   if (
     !shouldPauseSubmit({
       enabled: running,
       acknowledged,
-      formHasWarnedField,
+      formHasWarnedField: !!warned,
       concernCount: concerns.length,
     })
   ) {
@@ -508,7 +787,11 @@ function onSubmit(event: Event): void {
   }
   if (event.cancelable) event.preventDefault();
   pausedForm = form;
-  showPanel(concerns);
+  pausedSubmitter = event instanceof SubmitEvent && event.submitter instanceof HTMLElement ? event.submitter : null;
+  showPanel(concerns, warned ?? form);
+  // The person pressed submit and nothing was sent, so bring the reason into view and move focus to it.
+  panelHost?.scrollIntoView({ block: "nearest" });
+  panelNode?.focus({ preventScroll: true });
 }
 
 function stopScanning(): void {
@@ -527,15 +810,19 @@ function stopScanning(): void {
   document.removeEventListener("focusin", onFocus, true);
   document.removeEventListener("submit", onSubmit, true);
   for (const field of book.activeItems()) clearUi(field);
+  for (const field of [...views.keys()]) clearUi(field);
   book.clearActive();
   hidePanel();
   pausedForm = null;
+  pausedSubmitter = null;
+  concernCache = null;
+  concernKey = "";
 }
 
 function startScanning(): void {
   if (running) return;
   running = true;
-  scanContainer(document);
+  scanContainers([document]);
   rootObserver = new MutationObserver((records) => queue(records));
   rootObserver.observe(document.documentElement, OBSERVE);
   document.addEventListener("focusin", onFocus, true);
@@ -545,12 +832,6 @@ function startScanning(): void {
 function applyEnabled(on: boolean): void {
   if (on) startScanning();
   else if (running) stopScanning();
-}
-
-async function requestEnabled(): Promise<void> {
-  const response = await send({ type: "sw/getEnabled" });
-  const state = parseEnabledState(response);
-  applyEnabled(state ? state.enabled : true);
 }
 
 function listen(): void {
@@ -563,8 +844,12 @@ function listen(): void {
       return false;
     }
     if (parsed.type === "page/getSummary") {
-      sendResponse(buildSummary());
-      return false;
+      // Read the saved choice first, so a summary asked for right after a toggle is never stale.
+      void readEnabled().then((enabled) => {
+        applyEnabled(enabled);
+        sendResponse(buildSummary());
+      });
+      return true;
     }
     return false;
   });
@@ -580,5 +865,5 @@ export function boot(): void {
   booted = true;
   marker.__shouldntWouldnt = true;
   listen();
-  void requestEnabled();
+  void readEnabled().then(applyEnabled);
 }

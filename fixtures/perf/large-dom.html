@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Large page</title>
+    <link rel="stylesheet" href="../common.css" />
+    <style>
+      body { max-width: 72rem; }
+      .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+      .card { border: 1px solid #ddd; padding: 6px; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <form action="#search" role="search"><label>Search <input type="search" name="q" /></label></form>
+    </header>
+    <h1>Large page</h1>
+    <p class="note">About thirty thousand elements and only a few form fields.</p>
+    <div id="grid" class="grid"></div>
+    <footer>
+      <form action="#newsletter" method="get">
+        <label>Email for our newsletter <input type="email" name="email" autocomplete="email" /></label>
+        <button type="submit">Subscribe</button>
+      </form>
+    </footer>
+    <script>
+      var grid = document.getElementById("grid");
+      for (var i = 0; i < 2500; i += 1) {
+        var card = document.createElement("article");
+        card.className = "card";
+        var title = document.createElement("h3");
+        title.textContent = "Product " + i;
+        var body = document.createElement("p");
+        var a = document.createElement("span");
+        a.textContent = "Rating ";
+        var b = document.createElement("strong");
+        b.textContent = (i % 5) + 1 + " of 5";
+        body.append(a, b);
+        var list = document.createElement("ul");
+        for (var j = 0; j < 3; j += 1) {
+          var li = document.createElement("li");
+          var em = document.createElement("em");
+          em.textContent = "Feature " + j;
+          li.appendChild(em);
+          list.appendChild(li);
+        }
+        var link = document.createElement("a");
+        link.href = "#p" + i;
+        link.textContent = "Details";
+        card.append(title, body, list, link);
+        grid.appendChild(card);
+      }
+    </script>
+  </body>
+</html>

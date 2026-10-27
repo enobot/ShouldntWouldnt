@@ -1,6 +1,10 @@
 import { PRIVACY_LIMIT, PRIVACY_PARAGRAPHS, PRIVACY_TITLE, PRODUCT_NAME, TAGLINE } from "../shared/disclaimer.js";
+import { HIDDEN_REMINDER_LINE } from "../shared/copy.js";
 import { parseEnabledState, parsePageSummary, type PageSummary } from "../shared/messages.js";
 import { PAGE_STATUS_LABEL } from "../shared/types.js";
+
+const TOGGLE_ID = "protection-toggle";
+let saving = false;
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, text?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag);
@@ -17,9 +21,10 @@ function sendRuntime(message: unknown): Promise<unknown> {
   });
 }
 
-function sendTab(tabId: number, message: unknown): Promise<unknown> {
+/** Asks only the tab's top frame. Every frame runs the content script, and an ad frame must not answer for the page. */
+function sendTopFrame(tabId: number, message: unknown): Promise<unknown> {
   return new Promise((resolve) => {
-    chrome.tabs.sendMessage(tabId, message, (response) => {
+    chrome.tabs.sendMessage(tabId, message, { frameId: 0 }, (response) => {
       void chrome.runtime.lastError;
       resolve(response ?? null);
     });
@@ -30,7 +35,7 @@ function activeTabId(): Promise<number | null> {
   return new Promise((resolve) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       void chrome.runtime.lastError;
-      const id = tabs[0]?.id;
+      const id = tabs?.[0]?.id;
       resolve(typeof id === "number" ? id : null);
     });
   });
@@ -48,19 +53,41 @@ function countText(count: number | null): string {
   return count === null ? "—" : String(count);
 }
 
+function toggleButton(enabled: boolean): HTMLButtonElement {
+  const toggle = el("button");
+  toggle.type = "button";
+  toggle.id = TOGGLE_ID;
+  toggle.className = "switch";
+  toggle.setAttribute("role", "switch");
+  toggle.setAttribute("aria-checked", enabled ? "true" : "false");
+  const label = el("span", "Protection");
+  const state = el("span", enabled ? "On" : "Off");
+  state.className = "state";
+  state.setAttribute("aria-hidden", "true");
+  toggle.append(label, state);
+  toggle.addEventListener("click", () => {
+    // Ignore repeat clicks until this save finishes. The button is not disabled, so keyboard focus stays on it.
+    if (saving) return;
+    saving = true;
+    toggle.setAttribute("aria-busy", "true");
+    void sendRuntime({ type: "sw/setEnabled", enabled: !enabled })
+      .then(() => refresh())
+      .finally(() => {
+        saving = false;
+      });
+  });
+  return toggle;
+}
+
 function render(enabled: boolean, summary: PageSummary | null): void {
   const root = document.querySelector("#app");
   if (!root) return;
+  const hadFocus = document.activeElement?.id === TOGGLE_ID;
   root.replaceChildren();
 
   root.append(el("h1", PRODUCT_NAME), el("p", TAGLINE));
 
-  const toggle = el("button", enabled ? "Protection is on" : "Protection is off");
-  toggle.type = "button";
-  toggle.setAttribute("aria-pressed", enabled ? "true" : "false");
-  toggle.addEventListener("click", () => {
-    void sendRuntime({ type: "sw/setEnabled", enabled: !enabled }).then(() => refresh());
-  });
+  const toggle = toggleButton(enabled);
   root.append(toggle);
   root.append(
     el(
@@ -71,11 +98,16 @@ function render(enabled: boolean, summary: PageSummary | null): void {
 
   const status = el("p");
   status.className = "status";
-  status.setAttribute("aria-live", "polite");
+  status.setAttribute("role", "status");
   const summaryStatus = summary?.status ?? "unable";
   status.textContent = PAGE_STATUS_LABEL[summaryStatus];
   root.append(status);
   root.append(el("p", "This is not a verdict that the website is legitimate."));
+  if (summary?.reminderHidden) {
+    const warning = el("p", HIDDEN_REMINDER_LINE);
+    warning.className = "alert";
+    root.append(warning);
+  }
   root.append(line("Site", summary?.hostname || "—"));
   root.append(line("Connection", summary ? summary.scheme : "—"));
   root.append(line("Sensitive fields", countText(summary?.sensitiveCount ?? null)));
@@ -85,6 +117,7 @@ function render(enabled: boolean, summary: PageSummary | null): void {
   root.append(el("h2", PRIVACY_TITLE));
   for (const paragraph of PRIVACY_PARAGRAPHS) root.append(el("p", paragraph));
   root.append(el("p", PRIVACY_LIMIT));
+  if (hadFocus) toggle.focus();
 }
 
 async function refresh(): Promise<void> {
@@ -93,7 +126,7 @@ async function refresh(): Promise<void> {
   const tabId = await activeTabId();
   let summary: PageSummary | null = null;
   if (tabId !== null) {
-    summary = parsePageSummary(await sendTab(tabId, { type: "page/getSummary" }));
+    summary = parsePageSummary(await sendTopFrame(tabId, { type: "page/getSummary" }));
   }
   render(enabled, summary);
 }

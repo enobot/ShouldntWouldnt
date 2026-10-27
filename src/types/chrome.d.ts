@@ -8,6 +8,7 @@ interface ChromeLastError {
 interface ChromeMessageSender {
   id?: string;
   url?: string;
+  frameId?: number;
   tab?: { id?: number };
 }
 
@@ -40,13 +41,21 @@ interface ChromeRuntime {
 interface ChromeTabs {
   query(
     queryInfo: { active?: boolean; currentWindow?: boolean },
-    callback: (tabs: Array<{ id?: number }>) => void,
+    callback: (tabs: Array<{ id?: number }> | undefined) => void,
   ): void;
+  sendMessage(tabId: number, message: unknown, responseCallback?: (response: unknown) => void): void;
   sendMessage(
     tabId: number,
     message: unknown,
+    options: { frameId?: number },
     responseCallback?: (response: unknown) => void,
   ): void;
+}
+
+interface ChromeAction {
+  setBadgeText(details: { tabId?: number; text: string }, callback?: () => void): void;
+  setBadgeBackgroundColor(details: { tabId?: number; color: string }, callback?: () => void): void;
+  setTitle(details: { tabId?: number; title: string }, callback?: () => void): void;
 }
 
 interface ChromeDom {
@@ -59,7 +68,7 @@ interface ChromeStorageChange {
 }
 
 interface ChromeStorageArea {
-  get(key: string, callback: (items: Record<string, unknown>) => void): void;
+  get(key: string, callback: (items: Record<string, unknown> | undefined) => void): void;
   set(items: Record<string, unknown>, callback?: () => void): void;
 }
 
@@ -73,6 +82,7 @@ interface ChromeStorage {
 interface ChromeNamespace {
   runtime: ChromeRuntime;
   tabs: ChromeTabs;
+  action: ChromeAction;
   storage: ChromeStorage;
   dom?: ChromeDom;
 }

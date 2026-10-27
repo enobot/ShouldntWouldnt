@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Server-rendered React form</title>
+    <link rel="stylesheet" href="../common.css" />
+    <script src="/node_modules/react/umd/react.production.min.js"></script>
+    <script src="/node_modules/react-dom/umd/react-dom.production.min.js"></script>
+    <script src="/node_modules/react-dom/umd/react-dom-server-legacy.browser.production.min.js"></script>
+  </head>
+  <body>
+    <h1>Server-rendered React form</h1>
+    <p class="note">
+      The markup below is rendered to HTML first, as a server would, and React attaches to it ("hydrates") after the
+      number of milliseconds in the address (default 0). The page records hydration errors React reports.
+    </p>
+    <div id="root"></div>
+    <script>
+      var h = React.createElement;
+      function App() {
+        var state = React.useState("");
+        return h(
+          "form",
+          { action: "#ssr" },
+          h("label", null, "Full name ", h("input", { name: "name" })),
+          h("label", null, "Social Security number ", h("input", { name: "ssn", value: state[0], onChange: function (e) { state[1](e.target.value); } })),
+          h("label", null, "Card number ", h("input", { name: "card", autoComplete: "cc-number" })),
+          h("p", { id: "typed" }, "Typed: " + state[0].length),
+          h("button", { type: "submit" }, "Continue"),
+        );
+      }
+      var root = document.getElementById("root");
+      root.innerHTML = ReactDOMServer.renderToString(h(App));
+      var errors = 0;
+      var delay = Number(new URLSearchParams(location.search).get("delay") || 0);
+      setTimeout(function () {
+        ReactDOM.hydrateRoot(root, h(App), {
+          onRecoverableError: function () {
+            errors += 1;
+            document.documentElement.setAttribute("data-hydration-errors", String(errors));
+          },
+        });
+        document.documentElement.setAttribute("data-hydrated", "1");
+      }, delay);
+    </script>
+  </body>
+</html>

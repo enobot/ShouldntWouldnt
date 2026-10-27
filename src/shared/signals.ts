@@ -152,7 +152,11 @@ function isLookalikeHostname(hostname: string): boolean {
   for (const brand of BRANDS) {
     for (const suffix of [".com.", ".net.", ".org.", ".gov."]) {
       const needle = `${brand}${suffix}`;
-      if (joined.includes(needle) && !joined.endsWith(`${brand}${suffix.slice(0, -1)}`)) return true;
+      const at = joined.indexOf(needle);
+      if (at < 0 || joined.endsWith(`${brand}${suffix.slice(0, -1)}`)) continue;
+      // brand.com.au, brand.com.br and similar are country sites, not lookalikes.
+      if (/^[a-z]{2}$/.test(joined.slice(at + needle.length))) continue;
+      return true;
     }
   }
   return false;

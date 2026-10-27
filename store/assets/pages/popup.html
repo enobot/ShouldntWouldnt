@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Store screenshot: popup</title>
+    <link rel="stylesheet" href="shot.css" />
+    <style>
+      .stage {
+        position: relative;
+        overflow: hidden;
+        background: #f4eeee;
+      }
+
+      .stage .page {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        opacity: 0.45;
+      }
+
+      /* The real popup, captured from popup.html for the page behind it, drawn where Chrome opens it. */
+      .stage .popup {
+        position: absolute;
+        top: 0;
+        right: 22px;
+        width: 320px;
+        border: 1px solid #d8cccc;
+        border-top: 0;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 10px 28px rgba(42, 18, 24, 0.28);
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="caption">
+      <p class="brand"><img src="/icons/icon128.png" alt="" /> Shouldn't Wouldn't</p>
+      <h1>On or off, one click away</h1>
+      <p>The toolbar popup shows the site, the connection, and a plain status. "No obvious risks" is not a verdict that a site is safe.</p>
+      <p>Turning protection off is saved in this browser profile until you turn it back on.</p>
+      <p class="fine">Sample page with made-up details.</p>
+    </aside>
+    <main class="stage">
+      <img class="page" src="/capture/page.png" alt="" />
+      <img class="popup" src="/capture/popup.png" alt="" />
+    </main>
+  </body>
+</html>

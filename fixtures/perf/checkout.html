@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Checkout</title>
+    <link rel="stylesheet" href="../common.css" />
+    <style>
+      body { max-width: 64rem; }
+      .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
+      .row { display: flex; gap: 1rem; }
+      .row label { flex: 1; }
+      .item { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 4px 0; }
+    </style>
+  </head>
+  <body>
+    <h1>Checkout</h1>
+    <p class="note">Fake checkout. Contact, shipping, and payment sections, plus an order summary.</p>
+    <div class="grid">
+      <form action="#checkout" method="get">
+        <fieldset>
+          <legend>Contact</legend>
+          <label>Email <input type="email" name="checkout[email]" autocomplete="email" /></label>
+          <label><input type="checkbox" name="newsletter" /> Email me with news and offers</label>
+        </fieldset>
+        <fieldset>
+          <legend>Shipping address</legend>
+          <div class="row">
+            <label>First name <input name="checkout[shipping_address][first_name]" autocomplete="shipping given-name" /></label>
+            <label>Last name <input name="checkout[shipping_address][last_name]" autocomplete="shipping family-name" /></label>
+          </div>
+          <label>Address <input name="checkout[shipping_address][address1]" autocomplete="shipping address-line1" /></label>
+          <label>Apartment, suite, etc. (optional) <input name="checkout[shipping_address][address2]" autocomplete="shipping address-line2" /></label>
+          <div class="row">
+            <label>City <input name="checkout[shipping_address][city]" autocomplete="shipping address-level2" /></label>
+            <label>State <select id="state" name="checkout[shipping_address][province]" autocomplete="shipping address-level1"></select></label>
+            <label>ZIP code <input name="checkout[shipping_address][zip]" autocomplete="shipping postal-code" /></label>
+          </div>
+          <label>Phone <input type="tel" name="checkout[shipping_address][phone]" autocomplete="shipping tel" /></label>
+        </fieldset>
+        <fieldset>
+          <legend>Payment</legend>
+          <label>Card number <input name="number" autocomplete="cc-number" inputmode="numeric" /></label>
+          <div class="row">
+            <label>Expiration date (MM / YY) <input name="expiry" autocomplete="cc-exp" /></label>
+            <label>Security code <input name="verification_value" autocomplete="cc-csc" inputmode="numeric" /></label>
+          </div>
+          <label>Name on card <input name="name" autocomplete="cc-name" /></label>
+          <label><input type="checkbox" checked name="billing_same" /> Use shipping address as billing address</label>
+        </fieldset>
+        <label>Discount code <input name="checkout[reduction_code]" /></label>
+        <button type="submit">Pay now</button>
+      </form>
+      <aside id="summary"><h2>Order summary</h2></aside>
+    </div>
+    <script>
+      var states = ["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware",
+        "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
+        "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana",
+        "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina",
+        "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina",
+        "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia",
+        "Wisconsin", "Wyoming"];
+      var select = document.getElementById("state");
+      states.forEach(function (name) {
+        var option = document.createElement("option");
+        option.textContent = name;
+        select.appendChild(option);
+      });
+      var summary = document.getElementById("summary");
+      for (var i = 1; i <= 20; i += 1) {
+        var item = document.createElement("div");
+        item.className = "item";
+        var name = document.createElement("span");
+        name.textContent = "Sample product " + i;
+        var price = document.createElement("span");
+        price.textContent = "$" + (i * 3 + 0.99).toFixed(2);
+        item.append(name, price);
+        summary.appendChild(item);
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Long registration form</title>
+    <link rel="stylesheet" href="../common.css" />
+  </head>
+  <body>
+    <h1>Long registration form</h1>
+    <p class="note">Fake labels only. About sixty fields, a mix of ordinary and sensitive.</p>
+    <form id="form" action="#register" method="get"></form>
+    <script>
+      var rows = [
+        ["First name", "first_name", "given-name"], ["Middle name", "middle_name", "additional-name"],
+        ["Last name", "last_name", "family-name"], ["Preferred name", "nickname", ""],
+        ["Email", "email", "email", "email"], ["Confirm email", "email_confirm", "email", "email"],
+        ["Mobile phone", "phone", "tel", "tel"], ["Work phone", "work_phone", "", "tel"],
+        ["Date of birth", "dob", "bday"], ["Street address", "address1", "address-line1"],
+        ["Apartment, suite, etc.", "address2", "address-line2"], ["City", "city", "address-level2"],
+        ["State", "state", "address-level1"], ["ZIP code", "zip", "postal-code"],
+        ["Country", "country", "country-name"], ["Social Security number", "ssn", "off"],
+        ["Driver’s license number", "dl_number", ""], ["Employer", "employer", "organization"],
+        ["Job title", "job_title", "organization-title"], ["Annual income", "income", ""],
+        ["Username", "username", "username"], ["Password", "password", "new-password", "password"],
+        ["Confirm password", "password2", "new-password", "password"], ["Security question", "sq", ""],
+        ["Security answer", "sa", ""], ["How did you hear about us?", "referral", ""],
+        ["Website", "website", "url", "url"], ["Company size", "company_size", ""],
+        ["Emergency contact name", "ec_name", ""], ["Emergency contact phone", "ec_phone", "", "tel"],
+        ["Bank account number", "bank_account", ""], ["Routing number", "routing", ""],
+        ["Favorite color", "color_pref", ""], ["T-shirt size", "shirt", ""],
+        ["Dietary needs", "diet", ""], ["Allergies", "allergies", ""],
+        ["Medical conditions", "medical", ""], ["Insurance provider", "insurer", ""],
+        ["Member ID", "member_id", ""], ["Passport number", "passport", ""],
+        ["Nationality", "nationality", ""], ["Languages spoken", "languages", ""],
+        ["LinkedIn profile", "linkedin", "url", "url"], ["Portfolio", "portfolio", "url", "url"],
+        ["Years of experience", "years", "", "number"], ["Start date", "start", "", "date"],
+        ["Promo code", "promo", ""], ["Referral code", "ref_code", ""],
+        ["Notes", "notes", ""], ["Billing address", "billing_address", ""],
+        ["Billing city", "billing_city", ""], ["Billing ZIP", "billing_zip", ""],
+        ["Card number", "card", "cc-number"], ["Expiration", "exp", "cc-exp"],
+        ["Security code", "cvv", "cc-csc"], ["Name on card", "ccname", "cc-name"],
+        ["Pet name", "pet", ""], ["Hobbies", "hobbies", ""], ["Search tags", "tags", ""]
+      ];
+      var form = document.getElementById("form");
+      rows.forEach(function (row, index) {
+        var label = document.createElement("label");
+        label.appendChild(document.createTextNode(row[0] + " "));
+        var input = document.createElement("input");
+        input.name = row[1];
+        input.id = "f" + index;
+        if (row[2]) input.setAttribute("autocomplete", row[2]);
+        if (row[3]) input.type = row[3];
+        label.appendChild(input);
+        form.appendChild(label);
+      });
+      var submit = document.createElement("button");
+      submit.type = "submit";
+      submit.textContent = "Create account";
+      form.appendChild(submit);
+    </script>
+  </body>
+</html>

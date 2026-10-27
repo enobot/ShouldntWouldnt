@@ -1,0 +1,127 @@
+/* Layout for the store screenshots: a caption on the left, a sample web page on the right.
+   Rendered at 800×500 CSS pixels and a device scale of 1.6, which gives 1280×800 images. */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  background: #fff;
+  color: #241418;
+  font: 15px/1.45 Georgia, "Times New Roman", serif;
+}
+
+.caption {
+  display: flex;
+  flex-direction: column;
+  padding: 34px 28px 24px;
+  background: #7a2430;
+  color: #fff7f7;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 36px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.brand img {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  box-shadow: 0 0 0 2px #fff7f7;
+}
+
+.caption h1 {
+  margin: 0 0 14px;
+  font-size: 27px;
+  line-height: 1.2;
+  font-weight: 650;
+}
+
+.caption p {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.caption .fine {
+  margin-top: auto;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.site {
+  overflow: hidden;
+  padding: 20px 34px 0;
+}
+
+.site header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0 0 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e6dcdc;
+  color: #6b4a52;
+  font-size: 14px;
+}
+
+.site header strong {
+  color: #241418;
+  font-size: 16px;
+}
+
+.site h2 {
+  margin: 0 0 4px;
+  font-size: 22px;
+  font-weight: normal;
+}
+
+label {
+  display: block;
+  margin: 8px 0 2px;
+}
+
+input,
+textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border: 1px solid #b9aaad;
+  border-radius: 4px;
+  font: inherit;
+}
+
+textarea {
+  height: 40px;
+  resize: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+button[type="submit"] {
+  margin-top: 12px;
+  padding: 7px 16px;
+  border: 0;
+  border-radius: 4px;
+  background: #1e3a5f;
+  color: #fff;
+  font: inherit;
+}

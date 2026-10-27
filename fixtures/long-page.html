@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Long page</title>
+    <link rel="stylesheet" href="common.css" />
+  </head>
+  <body>
+    <h1>Long page</h1>
+    <p class="note">
+      The form is far down the page. Over http, focusing the password field shows the site note next to the field, and
+      pressing Sign in pauses with the note in view. It used to appear at the top of the page, out of sight.
+    </p>
+    <div style="height: 1800px; border-left: 4px solid #eee; padding-left: 8px">Scroll down.</div>
+    <form id="form" action="#signed-in" method="get">
+      <label>Username <input id="username" name="username" autocomplete="username" /></label>
+      <label>Password <input id="password" name="password" type="password" autocomplete="current-password" /></label>
+      <button id="submit" type="submit" name="go" value="sign-in">Sign in</button>
+    </form>
+  </body>
+</html>

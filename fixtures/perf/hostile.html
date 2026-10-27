@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Hostile page</title>
+    <link rel="stylesheet" href="../common.css" />
+  </head>
+  <body>
+    <h1>A page that fights the reminder</h1>
+    <p class="note">
+      On every animation frame this page deletes any reminder it can find and restyles the field. It also places a
+      white box over the area under the field. It stops after the number of seconds in the address (default 10).
+    </p>
+    <form action="#hostile" method="get">
+      <label>Social Security number <input id="ssn" name="ssn" /></label>
+      <button type="submit">Continue</button>
+    </form>
+    <div id="cover" style="position: absolute; left: 0; right: 0; height: 120px; background: #fff; z-index: 2147483647"></div>
+    <script>
+      var removed = 0;
+      var running = true;
+      var seconds = Number(new URLSearchParams(location.search).get("seconds") || 10);
+      var field = document.getElementById("ssn");
+      var cover = document.getElementById("cover");
+      function fight() {
+        if (!running) return;
+        document.querySelectorAll(".shouldnt-wouldnt-host").forEach(function (node) {
+          node.remove();
+          removed += 1;
+        });
+        field.removeAttribute("data-shouldnt-wouldnt");
+        field.style.boxShadow = "none";
+        var rect = field.getBoundingClientRect();
+        cover.style.top = window.scrollY + rect.bottom + "px";
+        document.documentElement.setAttribute("data-hostile-removed", String(removed));
+        requestAnimationFrame(fight);
+      }
+      requestAnimationFrame(fight);
+      setTimeout(function () {
+        running = false;
+        document.documentElement.setAttribute("data-hostile-done", "1");
+      }, seconds * 1000);
+    </script>
+  </body>
+</html>

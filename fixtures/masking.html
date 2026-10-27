@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Masking</title>
+    <link rel="stylesheet" href="common.css" />
+  </head>
+  <body>
+    <h1>Masking</h1>
+    <p class="note">
+      Fake labels only. The Social Security, card, and bank fields should show dots as you type, with a Show button in
+      the note. The password box already hides. Email and comments are not masked. Do not type real information.
+    </p>
+    <form id="form" action="#masked" method="get">
+      <label>Social Security number <input id="ssn" name="ssn" placeholder="123-45-6789" /></label>
+      <label>Card number <input id="card" name="card" autocomplete="cc-number" inputmode="numeric" /></label>
+      <label>Bank account number <input id="bank" name="bank" type="tel" /></label>
+      <label>Password <input id="password" name="password" type="password" autocomplete="current-password" /></label>
+      <label>Email <input id="email" name="email" type="email" /></label>
+      <label>Comments <textarea id="comments" name="comments"></textarea></label>
+      <button type="submit">Continue</button>
+    </form>
+  </body>
+</html>

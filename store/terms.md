@@ -8,7 +8,7 @@ You may install and use Shouldn't Wouldn't without paying. Every feature is incl
 
 ## What you are using
 
-Shouldn't Wouldn't shows local reminders about fields that look sensitive, and about a few local connection and address signals. It does not read what you type. It does not promise that a website is safe, legitimate, or malicious. "No obvious risks" means the local checks did not find a field or signal they are built to notice. It does not mean the website is trustworthy.
+Shouldn't Wouldn't shows local reminders about fields that look sensitive, and about a few local connection and address signals. For some kinds of numbers it shows dots on screen instead of the characters you type; that changes only your screen, not what the website receives. It does not read what you type. It does not promise that a website is safe, legitimate, or malicious. "No obvious risks" means the local checks did not find a field or signal they are built to notice. It does not mean the website is trustworthy.
 
 A website can still hide, cover, or remove a reminder. The extension cannot stop a site that is trying to do that.
 

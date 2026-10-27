@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Validation and two submit buttons</title>
+    <link rel="stylesheet" href="common.css" />
+  </head>
+  <body>
+    <h1>Validation and two submit buttons</h1>
+    <p class="note">
+      The Social Security field is required and must look like 000-00-0000. The form has two submit buttons. The page
+      writes the button that submitted the form into the address.
+    </p>
+    <form id="form" action="#sent" method="get">
+      <label>Social Security number <input id="ssn" name="ssn" required pattern="\d{3}-\d{2}-\d{4}" /></label>
+      <button type="submit" name="action" value="save">Save</button>
+      <button type="submit" name="action" value="delete">Delete draft</button>
+    </form>
+  </body>
+</html>

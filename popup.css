@@ -40,8 +40,38 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+button[aria-busy="true"] {
+  cursor: progress;
+}
+
+.switch {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.switch .state {
+  min-width: 2.2em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-weight: 650;
+  text-align: center;
+  border: 1px solid currentColor;
+}
+
+.switch[aria-checked="true"] .state {
+  color: #fff;
+  background: #7a2430;
+  border-color: #7a2430;
+}
+
 .status {
   font-weight: 650;
+}
+
+.alert {
+  border-left: 3px solid #9f1239;
+  padding-left: 8px;
 }
 
 .k {

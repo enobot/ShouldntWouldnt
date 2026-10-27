@@ -1,19 +1,20 @@
 import type { ConcernKind, WarnCategory } from "./types.js";
 
+// "Appears to be asking" because the extension reads labels, not the site's intent, and labels can mislead.
 export const FIELD_COPY: Record<WarnCategory, string> = {
-  ssn: "Sensitive Information: This website is requesting your Social Security number. Only share this information with organizations you trust.",
-  card: "Sensitive Information: This website is requesting your card number. Make sure you recognize and trust this website.",
-  cvv: "Sensitive Information: This website is requesting your card security code. Make sure you recognize and trust this website.",
-  bank: "Sensitive Information: This website is requesting your bank account number. Only share this information with organizations you trust.",
-  routing: "Sensitive Information: This website is requesting your bank routing number. Only share this information with organizations you trust.",
-  password: "Sensitive Information: This website is requesting your password. Make sure you are on the correct website before entering it.",
+  ssn: "Sensitive Information: This website appears to be asking for your Social Security number. Only share this information with organizations you trust.",
+  card: "Sensitive Information: This website appears to be asking for your card number. Make sure you recognize and trust this website.",
+  cvv: "Sensitive Information: This website appears to be asking for your card security code. Make sure you recognize and trust this website.",
+  bank: "Sensitive Information: This website appears to be asking for your bank account number. Only share this information with organizations you trust.",
+  routing: "Sensitive Information: This website appears to be asking for your bank routing number. Only share this information with organizations you trust.",
+  password: "Sensitive Information: This website appears to be asking for your password. Make sure you are on the correct website before entering it.",
   "drivers-license":
-    "Sensitive Information: This website is requesting your driver's license number. Only share this information with organizations you trust.",
-  passport: "Sensitive Information: This website is requesting your passport number. Only share this information with organizations you trust.",
+    "Sensitive Information: This website appears to be asking for your driver's license number. Only share this information with organizations you trust.",
+  passport: "Sensitive Information: This website appears to be asking for your passport number. Only share this information with organizations you trust.",
   "government-id":
-    "Sensitive Information: This website is requesting a government ID number. Only share this information with organizations you trust.",
+    "Sensitive Information: This website appears to be asking for a government ID number. Only share this information with organizations you trust.",
   health:
-    "Sensitive Information: This website is requesting health or medical information. Only share this information with organizations you trust.",
+    "Sensitive Information: This website appears to be asking for health or medical information. Only share this information with organizations you trust.",
   email: "Reminder: This field asks for your email address. Share it only if you are comfortable hearing from this website.",
   phone: "Reminder: This field asks for your phone number. Share it only if you want this website to contact you.",
   address: "Reminder: This field asks for your address. Share it only with websites you trust.",
@@ -65,8 +66,24 @@ export const FORM_LINE = "This form appears to send information over an insecure
 export const LOOKALIKE_LINE =
   "This website's address resembles another website. Double-check the URL before entering personal information.";
 
+export const MASK_LINE =
+  "To keep it off your screen, what you type here shows as dots. Choose Show to see it. This only changes your screen. The website still receives what you enter.";
+
+export const SHOW_LABEL = "Show";
+export const HIDE_LABEL = "Hide";
+export const SHOW_NAME = "Show what you typed in this field";
+export const HIDE_NAME = "Hide what you typed in this field";
+
+export const HIDDEN_REMINDER_LINE =
+  "This page removed or covered a Shouldn't Wouldn't reminder. Look carefully before you share anything here.";
+
 export function fieldCopy(category: WarnCategory): string {
   return FIELD_COPY[category];
+}
+
+/** Short text read by screen readers when the field gets focus. */
+export function fieldDescription(category: WarnCategory, concerns: ConcernKind[]): string {
+  return [FIELD_COPY[category], ...concernLines(concerns)].join(" ");
 }
 
 export function concernLines(concerns: ConcernKind[]): string[] {
@@ -77,12 +94,13 @@ export function concernLines(concerns: ConcernKind[]): string[] {
   return lines;
 }
 
-export function whyText(category: WarnCategory, concerns: ConcernKind[]): string {
+export function whyText(category: WarnCategory, concerns: ConcernKind[], masked = false): string {
   const parts = [
     `Shouldn't Wouldn't saw signs that this field is asking for ${KIND[category]}.`,
     BECAUSE[category],
     "We do not read what you type.",
   ];
+  if (masked) parts.push(MASK_LINE);
   if (concerns.length === 0) {
     parts.push(
       "Nothing else here shows a connection problem or a lookalike web address. That does not mean we checked the website's reputation.",

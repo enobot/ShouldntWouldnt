@@ -16,7 +16,17 @@ export interface GetSummaryMessage {
   type: "page/getSummary";
 }
 
-export type IncomingMessage = GetEnabledMessage | SetEnabledMessage | EnabledChangedMessage | GetSummaryMessage;
+/** From a content script: this page removed or covered a reminder, or the page that did so has gone. */
+export interface ReminderHiddenMessage {
+  type: "page/reminderHidden" | "page/left";
+}
+
+export type IncomingMessage =
+  | GetEnabledMessage
+  | SetEnabledMessage
+  | EnabledChangedMessage
+  | GetSummaryMessage
+  | ReminderHiddenMessage;
 
 export interface EnabledState {
   ok: true;
@@ -32,6 +42,7 @@ export interface PageSummary {
   sensitiveCount: number | null;
   concernCount: number | null;
   status: "no_obvious_risks" | "caution" | "strong_concern" | "unable";
+  reminderHidden: boolean;
 }
 
 const FORBIDDEN_KEYS = new Set([
@@ -61,7 +72,7 @@ export function parseIncoming(message: unknown): IncomingMessage | null {
   const record = plainObject(message);
   if (!record || hasForbiddenKey(record)) return null;
   const type = record.type;
-  if (type === "sw/getEnabled" || type === "page/getSummary") {
+  if (type === "sw/getEnabled" || type === "page/getSummary" || type === "page/reminderHidden" || type === "page/left") {
     if (Object.keys(record).length !== 1) return null;
     return { type };
   }
@@ -95,7 +106,8 @@ export function parsePageSummary(message: unknown): PageSummary | null {
   ) {
     return null;
   }
-  const allowed = ["ok", "protection", "hostname", "scheme", "sensitiveCount", "concernCount", "status"];
+  if (typeof record.reminderHidden !== "boolean") return null;
+  const allowed = ["ok", "protection", "hostname", "scheme", "sensitiveCount", "concernCount", "status", "reminderHidden"];
   if (Object.keys(record).some((key) => !allowed.includes(key))) return null;
   return {
     ok: true,
@@ -105,6 +117,7 @@ export function parsePageSummary(message: unknown): PageSummary | null {
     sensitiveCount: record.sensitiveCount,
     concernCount: record.concernCount,
     status: record.status,
+    reminderHidden: record.reminderHidden,
   };
 }
 
@@ -113,6 +126,15 @@ function isCount(value: unknown): value is number | null {
   return typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 10_000;
 }
 
-export function isExtensionPageSender(senderUrl: string | undefined, extensionBaseUrl: string): boolean {
-  return typeof senderUrl === "string" && senderUrl.startsWith(extensionBaseUrl);
+/** True when the sender is exactly the given extension page, ignoring a query string or fragment. */
+export function isExtensionPageSender(senderUrl: string | undefined, pageUrl: string): boolean {
+  if (typeof senderUrl !== "string") return false;
+  const bare = senderUrl.split(/[?#]/)[0];
+  return bare === pageUrl;
+}
+
+/** A content script in an ordinary web page tab, the only place a reminder can be hidden. */
+export function isWebPageSender(senderUrl: string | undefined, tabId: number | undefined): boolean {
+  if (typeof tabId !== "number" || tabId < 0 || typeof senderUrl !== "string") return false;
+  return senderUrl.startsWith("http://") || senderUrl.startsWith("https://") || senderUrl.startsWith("about:");
 }

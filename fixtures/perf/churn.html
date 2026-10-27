@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fields that keep changing</title>
+    <link rel="stylesheet" href="../common.css" />
+  </head>
+  <body>
+    <h1>Fields that keep changing</h1>
+    <p class="note">
+      Every 50 milliseconds this page rewrites placeholders on forty fields, replaces a block of ten inputs, and
+      updates a clock. It stops after the number of seconds in the address (default 10).
+    </p>
+    <p id="clock">0</p>
+    <form id="stable" action="#stable" method="get"></form>
+    <div id="swap"></div>
+    <script>
+      var stable = document.getElementById("stable");
+      var swap = document.getElementById("swap");
+      var clock = document.getElementById("clock");
+      var labels = ["Card number", "Nickname", "Password", "City", "Comment"];
+      for (var i = 0; i < 40; i += 1) {
+        var label = document.createElement("label");
+        label.appendChild(document.createTextNode(labels[i % labels.length] + " "));
+        var input = document.createElement("input");
+        input.name = "stable_" + i;
+        if (labels[i % labels.length] === "Password") input.type = "password";
+        label.appendChild(input);
+        stable.appendChild(label);
+      }
+      var tick = 0;
+      var seconds = Number(new URLSearchParams(location.search).get("seconds") || 10);
+      function paint() {
+        tick += 1;
+        clock.textContent = String(tick);
+        stable.querySelectorAll("input").forEach(function (input, index) {
+          input.setAttribute("placeholder", "Hint " + ((tick + index) % 7));
+        });
+        var form = document.createElement("form");
+        for (var j = 0; j < 10; j += 1) {
+          var label = document.createElement("label");
+          label.appendChild(document.createTextNode((j % 2 ? "Social Security number " : "Favorite food ") + tick));
+          var input = document.createElement("input");
+          input.name = "swap_" + j;
+          label.appendChild(input);
+          form.appendChild(label);
+        }
+        swap.replaceChildren(form);
+      }
+      var timer = setInterval(paint, 50);
+      setTimeout(function () {
+        clearInterval(timer);
+        document.documentElement.setAttribute("data-churn-done", "1");
+      }, seconds * 1000);
+    </script>
+  </body>
+</html>
